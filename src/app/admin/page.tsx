@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/Topbar";
@@ -23,7 +24,7 @@ export default function CompaniesDashboardPage() {
   const [deleting, setDeleting] = useState(false);
 
   async function load() {
-    const res = await fetch("/api/companies");
+    const res = await apiFetch("/api/companies");
     const data = await res.json();
     if (res.ok) setCompanies(data.companies);
   }
@@ -35,7 +36,7 @@ export default function CompaniesDashboardPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/companies/${deleteTarget.slug}`, { method: "DELETE" });
+    await apiFetch(`/api/companies/${deleteTarget.slug}`, { method: "DELETE" });
     setDeleting(false);
     setDeleteTarget(null);
     load();
@@ -189,7 +190,7 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
       .map((b) => b.trim())
       .filter(Boolean);
 
-    const res = await fetch("/api/companies", {
+    const res = await apiFetch("/api/companies", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, clientLoginId, password, branches }),

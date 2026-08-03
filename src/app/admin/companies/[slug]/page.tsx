@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -88,9 +89,9 @@ export default function CompanyAdminDashboardPage() {
 
   async function load() {
     const [companyRes, videosRes, usersRes] = await Promise.all([
-      fetch(`/api/companies/${slug}`),
-      fetch(`/api/companies/${slug}/videos`),
-      fetch(`/api/companies/${slug}/users`),
+      apiFetch(`/api/companies/${slug}`),
+      apiFetch(`/api/companies/${slug}/videos`),
+      apiFetch(`/api/companies/${slug}/users`),
     ]);
     const companyData = await companyRes.json();
     const videosData = await videosRes.json();
@@ -133,7 +134,7 @@ export default function CompanyAdminDashboardPage() {
   async function handleDeleteVideo() {
     if (!deleteTarget) return;
     setDeleting(true);
-    await fetch(`/api/videos/${deleteTarget.id}`, { method: "DELETE" });
+    await apiFetch(`/api/videos/${deleteTarget.id}`, { method: "DELETE" });
     setDeleting(false);
     setDeleteTarget(null);
     load();
@@ -142,7 +143,7 @@ export default function CompanyAdminDashboardPage() {
   async function handleDeleteUser() {
     if (!userDeleteTarget) return;
     setDeletingUser(true);
-    await fetch(`/api/users/${userDeleteTarget.id}`, { method: "DELETE" });
+    await apiFetch(`/api/users/${userDeleteTarget.id}`, { method: "DELETE" });
     setDeletingUser(false);
     setUserDeleteTarget(null);
     load();
@@ -151,7 +152,7 @@ export default function CompanyAdminDashboardPage() {
   async function handleDeleteBranch() {
     if (!branchDeleteTarget) return;
     setDeletingBranch(true);
-    await fetch(`/api/companies/${slug}/branches`, {
+    await apiFetch(`/api/companies/${slug}/branches`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: branchDeleteTarget }),
@@ -576,7 +577,7 @@ function AddVideoModal({
       return;
     }
     setLoading(true);
-    const res = await fetch(`/api/companies/${slug}/videos`, {
+    const res = await apiFetch(`/api/companies/${slug}/videos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ branchName, videoDate, driveLink, durationSeconds: duration }),
@@ -682,7 +683,7 @@ function AddBranchModal({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/companies/${slug}/branches`, {
+    const res = await apiFetch(`/api/companies/${slug}/branches`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -750,7 +751,7 @@ function AddUserModal({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/companies/${slug}/users`, {
+    const res = await apiFetch(`/api/companies/${slug}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, login, password, role }),
@@ -868,7 +869,7 @@ function EditUserModal({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/users/${user.id}`, {
+    const res = await apiFetch(`/api/users/${user.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, login, role, password: password || undefined }),
@@ -984,7 +985,7 @@ function EditCompanyLoginModal({
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const res = await fetch(`/api/companies/${slug}`, {
+    const res = await apiFetch(`/api/companies/${slug}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ login, password: password || undefined }),

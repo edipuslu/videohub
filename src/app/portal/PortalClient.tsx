@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { Topbar } from "@/components/Topbar";
 import { StatCard } from "@/components/StatCard";
@@ -41,8 +42,8 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
   useEffect(() => {
     (async () => {
       const [companyRes, videosRes] = await Promise.all([
-        fetch(`/api/companies/${slug}`),
-        fetch(`/api/companies/${slug}/videos`),
+        apiFetch(`/api/companies/${slug}`),
+        apiFetch(`/api/companies/${slug}/videos`),
       ]);
       const companyData = await companyRes.json();
       const videosData = await videosRes.json();

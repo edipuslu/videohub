@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -43,8 +44,8 @@ export default function ReceiptPage() {
   useEffect(() => {
     (async () => {
       const [companyRes, videosRes] = await Promise.all([
-        fetch(`/api/companies/${slug}`),
-        fetch(`/api/companies/${slug}/videos`),
+        apiFetch(`/api/companies/${slug}`),
+        apiFetch(`/api/companies/${slug}/videos`),
       ]);
       const companyData = await companyRes.json();
       const videosData = await videosRes.json();

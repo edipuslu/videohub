@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/Topbar";
@@ -23,7 +24,7 @@ export default function AdminAccountPage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/account");
+      const res = await apiFetch("/api/account");
       if (!res.ok) return;
       const data = await res.json();
       setAccount(data.account);
@@ -43,7 +44,7 @@ export default function AdminAccountPage() {
     }
 
     setSaving(true);
-    const res = await fetch("/api/account", {
+    const res = await apiFetch("/api/account", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, login, currentPassword, password: password || undefined }),
