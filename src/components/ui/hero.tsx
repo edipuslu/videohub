@@ -29,10 +29,13 @@ interface FloatingGlassCardProps {
   detail: string;
   badge: string;
   className?: string;
+  /** Static tilt in degrees; composes with the floating animation. */
+  rotate?: number;
 }
 
-const FloatingGlassCard = ({ label, detail, badge, className }: FloatingGlassCardProps) => (
+const FloatingGlassCard = ({ label, detail, badge, className, rotate = 0 }: FloatingGlassCardProps) => (
   <motion.div
+    style={{ rotate }}
     animate={{ y: [0, -16, 0] }}
     transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
     className={`pointer-events-none absolute z-20 hidden md:block ${className ?? ""}`}
@@ -69,8 +72,22 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff18_1px,transparent_1px),linear-gradient(to_bottom,#ffffff18_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <main className="relative z-10 flex min-h-[102vh] w-full items-center justify-center px-5 pb-36 pt-10 md:min-h-[112vh] md:pb-52">
-        <section className="grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_420px] lg:-translate-x-10 xl:-translate-x-16">
-          <div className="text-center lg:text-left">
+        <section className="relative grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_420px] lg:-translate-x-10 xl:-translate-x-16">
+          {/* Decorative ring behind the layout */}
+          <div className="pointer-events-none absolute left-[58%] top-1/2 hidden h-[46rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 md:block" />
+
+          {/* Floating brand pill */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="pointer-events-none absolute left-[56%] top-[-2.5rem] z-20 hidden md:block"
+          >
+            <span className="whitespace-nowrap rounded-full bg-[#ccff00] px-5 py-2.5 text-sm font-black text-black shadow-xl">
+              USLU DIGITAL
+            </span>
+          </motion.div>
+
+          <div className="relative text-center lg:text-left">
             <div className="mx-auto mb-8 flex w-fit items-center gap-1 lg:mx-0">
               <span className="relative rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-sm font-black text-black">
                 VIDEO
@@ -120,13 +137,15 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             label="Client view"
             detail="Finished links monthly"
             badge="CL"
+            rotate={8}
             className="left-[52%] top-[88%]"
           />
           <FloatingGlassCard
             label="Client links"
             detail="Videos ready to open"
             badge="VL"
-            className="left-[34%] top-[-1.5rem] w-28"
+            rotate={-5}
+            className="left-[37%] top-[1.5rem] w-28"
           />
         </section>
       </main>
