@@ -87,6 +87,7 @@ export default function CompanyAdminDashboardPage() {
   const [videoFormBranch, setVideoFormBranch] = useState<string | null>(null);
   const [showBranchForm, setShowBranchForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<VideoRow | null>(null);
+  const [editVideoTarget, setEditVideoTarget] = useState<VideoRow | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [branchDeleteTarget, setBranchDeleteTarget] = useState<string | null>(null);
   const [deletingBranch, setDeletingBranch] = useState(false);
@@ -391,10 +392,15 @@ export default function CompanyAdminDashboardPage() {
                         Open video →
                       </a>
                     </td>
-                    <td className="px-5 py-4 text-right">
-                      <button className="vh-btn-danger" onClick={() => setDeleteTarget(v)}>
-                        Delete
-                      </button>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button className="vh-btn-secondary" onClick={() => setEditVideoTarget(v)}>
+                          Edit
+                        </button>
+                        <button className="vh-btn-danger" onClick={() => setDeleteTarget(v)}>
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -511,6 +517,18 @@ export default function CompanyAdminDashboardPage() {
           onClose={() => setEditUserTarget(null)}
           onSaved={() => {
             setEditUserTarget(null);
+            load();
+          }}
+        />
+      )}
+
+      {editVideoTarget && (
+        <EditDeliveryModal
+          video={editVideoTarget}
+          branches={company.branches}
+          onClose={() => setEditVideoTarget(null)}
+          onSaved={() => {
+            setEditVideoTarget(null);
             load();
           }}
         />
@@ -1408,6 +1426,176 @@ function PaymentModal({
             Done
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Correct a delivery that was logged wrong.
+ *
+ * The form stays locked until EDIT is typed, so a stray click on a live
+ * delivery the client can already see can't quietly change it.
+ */
+function EditDeliveryModal({
+  video,
+  branches,
+  onClose,
+  onSaved,
+}: {
+  video: VideoRow;
+  branches: string[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [unlockWord, setUnlockWord] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+
+  const [title, setTitle] = useState(video.title ?? "");
+  const [branchName, setBranchName] = useState(video.branch_name);
+  const [videoDate, setVideoDate] = useState(video.video_date);
+  const [driveLink, setDriveLink] = useState(video.drive_link);
+  const [durationSeconds, setDurationSeconds] = useState(String(video.duration_seconds));
+
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await apiFetch(`/api/videos/${video.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, branchName, videoDate, driveLink, durationSeconds }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (!res.ok) {
+      setError(data.error ?? "Could not save the changes.");
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Edit delivery</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
+          {formatDate(video.video_date)} · {video.branch_name}
+        </p>
+
+        {!unlocked ? (
+          <div className="mt-6">
+            <label className="vh-label" htmlFor="unlock-edit">
+              Type <span className="text-vh-bright">EDIT</span> to unlock this delivery
+            </label>
+            <input
+              id="unlock-edit"
+              className="vh-input"
+              value={unlockWord}
+              onChange={(e) => setUnlockWord(e.target.value)}
+              placeholder="EDIT"
+              autoComplete="off"
+              autoFocus
+            />
+            <p className="mt-2 text-[11px] font-bold text-black/35">
+              This delivery is already visible to the client.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" className="vh-btn-secondary" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="vh-btn-primary"
+                disabled={unlockWord !== "EDIT"}
+                onClick={() => setUnlocked(true)}
+              >
+                Unlock
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+            <div>
+              <label className="vh-label">Video title</label>
+              <input
+                className="vh-input"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Summer menu promo"
+              />
+            </div>
+            <div>
+              <label className="vh-label">Branch / section</label>
+              <select
+                className="vh-input"
+                value={branchName}
+                onChange={(e) => setBranchName(e.target.value)}
+              >
+                {/* Keep the original value selectable even if that branch was removed. */}
+                {!branches.includes(branchName) && <option value={branchName}>{branchName}</option>}
+                {branches.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="vh-label">Video date</label>
+              <input
+                type="date"
+                className="vh-input"
+                value={videoDate}
+                min="2026-07-01"
+                onChange={(e) => setVideoDate(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="vh-label">Drive / video delivery link</label>
+              <input
+                className="vh-input"
+                value={driveLink}
+                onChange={(e) => setDriveLink(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="vh-label">Duration (seconds)</label>
+              <input
+                type="number"
+                min={1}
+                className="vh-input"
+                value={durationSeconds}
+                onChange={(e) => setDurationSeconds(e.target.value)}
+                required
+              />
+              <p className="mt-1.5 text-[11px] font-bold text-black/35">
+                Changing this changes the month&rsquo;s billable total.
+              </p>
+            </div>
+
+            {error && (
+              <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={saving}>
+                Cancel
+              </button>
+              <button type="submit" className="vh-btn-primary" disabled={saving}>
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
