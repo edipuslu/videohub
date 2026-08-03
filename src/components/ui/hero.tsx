@@ -145,7 +145,7 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             detail="Videos ready to open"
             badge="VL"
             rotate={-5}
-            className="left-[42%] top-[1.5rem] w-28"
+            className="left-[47%] top-[1.5rem] w-28"
           />
         </section>
       </main>
