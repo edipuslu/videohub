@@ -52,7 +52,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (!Number.isFinite(duration) || duration <= 0) {
       return NextResponse.json({ error: "Enter a valid duration in seconds." }, { status: 400 });
     }
-    update.duration_seconds = Math.round(duration);
+    update.duration_seconds = duration;
     // Kept in step with the duration for the legacy post_type column.
     update.post_type = classifyPostType(duration);
   }

@@ -11,6 +11,7 @@ import {
   aggregateBilling,
   currentMonthKey,
   formatDate,
+  formatSeconds,
   monthKey,
   monthLabel,
   yearOfMonthTabs,
@@ -89,7 +90,7 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
 
         <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <StatCard label="Videos delivered" value={monthVideos.length} hint={monthLabel(month)} accent />
-          <StatCard label="Total seconds" value={totalSeconds} />
+          <StatCard label="Total seconds" value={formatSeconds(totalSeconds)} />
           <StatCard label="Billable blocks (15s)" value={billing.blocks} />
         </div>
 
@@ -147,7 +148,7 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
                         Duration
                       </span>
                       <span className="rounded-full bg-vh-lime px-3 py-1 text-sm font-black tabular-nums text-black">
-                        {v.duration_seconds}s
+                        {formatSeconds(v.duration_seconds)}s
                       </span>
                     </div>
 

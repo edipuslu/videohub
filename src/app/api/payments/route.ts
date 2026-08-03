@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     const monthVideos = (videos ?? []).filter(
       (v) => v.company_slug === company.slug && monthKey(v.video_date) === month
     );
-    const totalSeconds = monthVideos.reduce((sum, v) => sum + v.duration_seconds, 0);
+    const totalSeconds = monthVideos.reduce((sum, v) => sum + Number(v.duration_seconds), 0);
 
     const saved = (payments ?? []).find((p) => p.company_slug === company.slug) ?? null;
 
@@ -131,7 +131,7 @@ export async function PATCH(req: Request) {
 
   const totalSeconds = (videos ?? [])
     .filter((v) => monthKey(v.video_date) === month)
-    .reduce((sum, v) => sum + v.duration_seconds, 0);
+    .reduce((sum, v) => sum + Number(v.duration_seconds), 0);
 
   const charge = calculateMonthCharge(totalSeconds, pricePerBlock);
   const nextStatus = status ?? (existing?.status as "paid" | "unpaid") ?? "unpaid";

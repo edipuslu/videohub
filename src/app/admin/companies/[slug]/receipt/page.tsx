@@ -11,6 +11,7 @@ import {
   aggregateBilling,
   currentMonthKey,
   formatDate,
+  formatSeconds,
   monthKey,
   monthLabel,
   yearOfMonthTabs,
@@ -177,7 +178,7 @@ export default function ReceiptPage() {
                       </td>
                       <td className="px-4 py-3 font-bold text-black/60">{v.branch_name}</td>
                       <td className="px-4 py-3 text-right font-black tabular-nums text-black">
-                        {v.duration_seconds}s
+                        {formatSeconds(v.duration_seconds)}s
                       </td>
                     </tr>
                   ))}
@@ -193,7 +194,7 @@ export default function ReceiptPage() {
             </div>
             <div className="rounded-2xl bg-vh-mist px-4 py-3 print:bg-transparent print:px-0">
               <p className="text-[11px] font-black uppercase tracking-wide text-black/40">Amount</p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-black">{totalSeconds}s</p>
+              <p className="mt-1 text-2xl font-black tabular-nums text-black">{formatSeconds(totalSeconds)}s</p>
             </div>
             <div className="rounded-2xl bg-vh-lime px-4 py-3 print:border print:border-black print:bg-transparent">
               <p className="text-[11px] font-black uppercase tracking-wide text-black/60">
@@ -203,7 +204,7 @@ export default function ReceiptPage() {
             </div>
             <div className="rounded-2xl bg-vh-mist px-4 py-3 print:bg-transparent print:px-0">
               <p className="text-[11px] font-black uppercase tracking-wide text-black/40">Left over</p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-black">{billing.leftover}s</p>
+              <p className="mt-1 text-2xl font-black tabular-nums text-black">{formatSeconds(billing.leftover)}s</p>
             </div>
           </div>
 
@@ -232,7 +233,7 @@ export default function ReceiptPage() {
                 </div>
                 <div className="flex items-center justify-between text-sm font-bold text-black/50">
                   <span>
-                    {billing.leftover}s ÷ 15 × {payment.pricePerBlock}
+                    {formatSeconds(billing.leftover)}s ÷ 15 × {payment.pricePerBlock}
                   </span>
                   <span className="tabular-nums text-black">
                     {formatAmount(payment.leftoverAmount)}
@@ -250,8 +251,8 @@ export default function ReceiptPage() {
 
           <p className="mt-6 text-xs font-bold leading-relaxed text-black/35">
             Billing is calculated on the total seconds delivered this month, pooled together — not per
-            video. {totalSeconds}s total = {billing.blocks} full 15-second block
-            {billing.blocks === 1 ? "" : "s"} ({billing.blocks * 15}s) with {billing.leftover}s left
+            video. {formatSeconds(totalSeconds)}s total = {billing.blocks} full 15-second block
+            {billing.blocks === 1 ? "" : "s"} ({billing.blocks * 15}s) with {formatSeconds(billing.leftover)}s left
             over, unbilled.
           </p>
         </div>

@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
     title: v.title ?? null,
     video_date: v.video_date,
     drive_link: v.drive_link,
-    duration_seconds: v.duration_seconds,
+    duration_seconds: Number(v.duration_seconds),
     created_at: v.created_at,
   }));
 
@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
     title: title || null,
     video_date: videoDate,
     drive_link: driveLink,
-    duration_seconds: Math.round(durationSeconds),
+    duration_seconds: durationSeconds,
     post_type: classifyPostType(durationSeconds),
   };
 

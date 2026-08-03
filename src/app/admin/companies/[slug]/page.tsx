@@ -17,6 +17,7 @@ import {
   aggregateBilling,
   currentMonthKey,
   formatDate,
+  formatSeconds,
   monthKey,
   monthLabel,
   yearOfMonthTabs,
@@ -239,10 +240,10 @@ export default function CompanyAdminDashboardPage() {
 
         <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <StatCard label="Videos this month" value={monthVideos.length} />
-          <StatCard label="Total seconds" value={totalSeconds} />
+          <StatCard label="Total seconds" value={formatSeconds(totalSeconds)} />
           <StatCard label="Sections" value={company.branches.length} />
           <StatCard label="Billable blocks (15s)" value={billing.blocks} hint="Full 15s blocks, pooled" accent />
-          <StatCard label="Leftover seconds" value={billing.leftover} hint="Unbilled remainder" />
+          <StatCard label="Leftover seconds" value={formatSeconds(billing.leftover)} hint="Unbilled remainder" />
         </div>
 
         {company.branches.length > 0 && (
@@ -381,7 +382,7 @@ export default function CompanyAdminDashboardPage() {
                       {v.title || <span className="text-black/25">Untitled</span>}
                     </td>
                     <td className="px-5 py-4 font-bold text-black/60">{v.branch_name}</td>
-                    <td className="px-5 py-4 font-black tabular-nums text-black">{v.duration_seconds}s</td>
+                    <td className="px-5 py-4 font-black tabular-nums text-black">{formatSeconds(v.duration_seconds)}s</td>
                     <td className="px-5 py-4">
                       <a
                         href={v.drive_link}
@@ -1353,7 +1354,7 @@ function PaymentModal({
                   Left over
                 </p>
                 <p className="mt-0.5 text-xl font-black tabular-nums text-black">
-                  {row.leftoverSeconds}s
+                  {formatSeconds(row.leftoverSeconds)}s
                 </p>
               </div>
             </div>
@@ -1368,7 +1369,7 @@ function PaymentModal({
                 </div>
                 <div className="flex items-center justify-between text-sm font-bold text-black/50">
                   <span>
-                    {charge.leftoverSeconds}s ÷ 15 × {formatAmount(price)}
+                    {formatSeconds(charge.leftoverSeconds)}s ÷ 15 × {formatAmount(price)}
                   </span>
                   <span className="tabular-nums text-black">
                     {formatAmount(charge.leftoverAmount)}
@@ -1569,7 +1570,8 @@ function EditDeliveryModal({
               <label className="vh-label">Duration (seconds)</label>
               <input
                 type="number"
-                min={1}
+                min={0.01}
+                step="0.01"
                 className="vh-input"
                 value={durationSeconds}
                 onChange={(e) => setDurationSeconds(e.target.value)}

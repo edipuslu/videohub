@@ -65,8 +65,22 @@ export function currentMonthKey(): string {
  * (60s) with 11s left over, not 6 blocks from rounding each video up separately.
  */
 export function aggregateBilling(totalSeconds: number): { blocks: number; leftover: number } {
-  const blocks = Math.floor(totalSeconds / 15);
-  return { blocks, leftover: totalSeconds - blocks * 15 };
+  // Durations can be fractional (12.29s), so round the pooled total to
+  // hundredths first — otherwise float noise turns 25.29 into 25.289999…
+  const total = Math.round((Number(totalSeconds) + Number.EPSILON) * 100) / 100;
+  const blocks = Math.floor(total / 15);
+  const leftover = Math.round((total - blocks * 15 + Number.EPSILON) * 100) / 100;
+  return { blocks, leftover };
+}
+
+/**
+ * Seconds for display: keeps decimals when they exist, drops them when they
+ * don't, so 13 reads as "13" and 12.29 reads as "12.29".
+ */
+export function formatSeconds(value: number | string | null | undefined): string {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return "0";
+  return String(Math.round((n + Number.EPSILON) * 100) / 100);
 }
 
 /** Month tabs to show: from tracking start through the end of next year, so the whole
