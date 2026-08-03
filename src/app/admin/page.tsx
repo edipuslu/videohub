@@ -54,6 +54,9 @@ export default function CompaniesDashboardPage() {
         subtitle="Uslu Digital admin"
         right={
           <>
+            <Link href="/admin/payments" className="vh-btn-ghost-dark">
+              Payments
+            </Link>
             <Link href="/admin/account" className="vh-btn-ghost-dark">
               My account
             </Link>
