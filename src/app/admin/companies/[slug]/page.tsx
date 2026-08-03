@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { MonthPicker } from "@/components/MonthPicker";
 import { PasswordFields, isPasswordPairValid } from "@/components/PasswordFields";
 import { SecretCell } from "@/components/SecretCell";
+import { calculateMonthCharge, formatAmount } from "@/lib/billing";
 import {
   TRACKING_START,
   aggregateBilling,
@@ -93,6 +94,7 @@ export default function CompanyAdminDashboardPage() {
   const [userDeleteTarget, setUserDeleteTarget] = useState<CompanyUserRow | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [showCompanyLoginForm, setShowCompanyLoginForm] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   async function load() {
     const [companyRes, videosRes, usersRes] = await Promise.all([
@@ -202,6 +204,9 @@ export default function CompanyAdminDashboardPage() {
             >
               Print receipt
             </Link>
+            <button className="vh-btn-ghost-dark" onClick={() => setShowPaymentForm(true)}>
+              Payment
+            </button>
             <button className="vh-btn-ghost-dark" onClick={() => setShowBranchForm(true)}>
               + Branch
             </button>
@@ -501,6 +506,15 @@ export default function CompanyAdminDashboardPage() {
             setEditUserTarget(null);
             load();
           }}
+        />
+      )}
+
+      {showPaymentForm && (
+        <PaymentModal
+          slug={company.slug}
+          companyName={company.name}
+          month={month}
+          onClose={() => setShowPaymentForm(false)}
         />
       )}
 
@@ -1082,6 +1096,213 @@ function EditCompanyLoginModal({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+interface PaymentState {
+  videoCount: number;
+  blocks: number;
+  leftoverSeconds: number;
+  pricePerBlock: number;
+  blocksAmount: number;
+  leftoverAmount: number;
+  total: number;
+  status: "paid" | "unpaid";
+  paidAt: string | null;
+}
+
+/**
+ * The month's bill for one company: rate per 15s block, the computed amounts,
+ * and whether it has been paid. Saving here is what makes the amounts appear
+ * on the printable receipt.
+ */
+function PaymentModal({
+  slug,
+  companyName,
+  month,
+  onClose,
+}: {
+  slug: string;
+  companyName: string;
+  month: string;
+  onClose: () => void;
+}) {
+  const [row, setRow] = useState<PaymentState | null>(null);
+  const [price, setPrice] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function load() {
+    const res = await apiFetch(`/api/payments?month=${month}&company=${slug}`);
+    if (!res.ok) {
+      const d = await res.json().catch(() => null);
+      setError(d?.error ?? "Could not load the payment for this month.");
+      return;
+    }
+    const data = await res.json();
+    const r = data.rows?.[0] ?? null;
+    setRow(r);
+    if (r) setPrice(r.pricePerBlock ? String(r.pricePerBlock) : "");
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, month]);
+
+  async function save(patch: { pricePerBlock?: string; status?: "paid" | "unpaid" }) {
+    setSaving(true);
+    setError(null);
+    const res = await apiFetch("/api/payments", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companySlug: slug, month, ...patch }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => null);
+      setError(d?.error ?? "Could not save.");
+      return;
+    }
+    setSaved(true);
+    load();
+  }
+
+  // Live preview while typing, so the totals update before saving.
+  const preview = row ? calculateMonthCharge(row.blocks * 15 + row.leftoverSeconds, Number(price) || 0) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-lg rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">
+          Payment · {monthLabel(month)}
+        </h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
+          {companyName} — set the rate per 15-second block. Saving puts these amounts on the
+          printable receipt.
+        </p>
+
+        {!row && !error && <p className="mt-6 text-sm font-bold text-black/35">Loading…</p>}
+
+        {row && (
+          <>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <div className="rounded-2xl bg-vh-mist px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-black/40">Videos</p>
+                <p className="mt-0.5 text-xl font-black tabular-nums text-black">{row.videoCount}</p>
+              </div>
+              <div className="rounded-2xl bg-vh-mist px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-black/40">
+                  Blocks (15s)
+                </p>
+                <p className="mt-0.5 text-xl font-black tabular-nums text-black">{row.blocks}</p>
+              </div>
+              <div className="rounded-2xl bg-vh-mist px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-wide text-black/40">
+                  Left over
+                </p>
+                <p className="mt-0.5 text-xl font-black tabular-nums text-black">
+                  {row.leftoverSeconds}s
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label className="vh-label" htmlFor="price-per-block">
+                Price per 15-second block
+              </label>
+              <input
+                id="price-per-block"
+                className="vh-input"
+                inputMode="decimal"
+                value={price}
+                placeholder="e.g. 250"
+                onChange={(e) => {
+                  setPrice(e.target.value);
+                  setSaved(false);
+                }}
+              />
+            </div>
+
+            {preview && (
+              <div className="mt-5 space-y-2 rounded-2xl border-2 border-vh-line px-5 py-4">
+                <div className="flex items-center justify-between text-sm font-bold text-black/50">
+                  <span>
+                    {preview.blocks} block{preview.blocks === 1 ? "" : "s"} × {preview.pricePerBlock}
+                  </span>
+                  <span className="tabular-nums text-black">{formatAmount(preview.blocksAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm font-bold text-black/50">
+                  <span>
+                    {preview.leftoverSeconds}s ÷ 15 × {preview.pricePerBlock}
+                  </span>
+                  <span className="tabular-nums text-black">
+                    {formatAmount(preview.leftoverAmount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t-2 border-vh-line pt-2">
+                  <span className="text-sm font-black uppercase tracking-wide text-black">Total</span>
+                  <span className="text-2xl font-black tabular-nums text-black">
+                    {formatAmount(preview.total)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-between rounded-2xl bg-vh-mist px-5 py-3">
+              <div>
+                <p className="text-sm font-black text-black">
+                  {row.status === "paid" ? "Marked as paid" : "Not paid yet"}
+                </p>
+                {row.status === "paid" && row.paidAt && (
+                  <p className="text-[11px] font-bold text-black/40">
+                    {new Date(row.paidAt).toLocaleDateString("en-US")}
+                  </p>
+                )}
+              </div>
+              <button
+                disabled={saving}
+                onClick={() => save({ status: row.status === "paid" ? "unpaid" : "paid" })}
+                className={
+                  row.status === "paid"
+                    ? "vh-btn-secondary"
+                    : "vh-btn-accent"
+                }
+              >
+                {row.status === "paid" ? "Mark unpaid" : "Mark paid"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {error && (
+          <div className="mt-5 rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
+            {error}
+          </div>
+        )}
+
+        {saved && !error && (
+          <div className="mt-5 rounded-xl border-2 border-vh-lime bg-vh-lime/20 px-3.5 py-2.5 text-sm font-black text-black">
+            Saved — these amounts now show on the printable receipt.
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={saving}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="vh-btn-primary"
+            disabled={saving || !row}
+            onClick={() => save({ pricePerBlock: price })}
+          >
+            {saving ? "Saving…" : "Save for this month"}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -12,23 +12,32 @@ import { monthKey } from "@/lib/postType";
  * records the rate used and whether it has been paid.
  */
 
-// GET /api/payments?month=YYYY-MM — every company's charge for that month.
+// GET /api/payments?month=YYYY-MM[&company=slug] — charges for that month.
 export async function GET(req: Request) {
   const session = await requireAdmin();
   if (isResponse(session)) return session;
 
-  const month = new URL(req.url).searchParams.get("month") ?? "";
+  const url = new URL(req.url);
+  const month = url.searchParams.get("month") ?? "";
+  const companyFilter = url.searchParams.get("company");
+
   if (!/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json({ error: "A month like 2026-08 is required." }, { status: 400 });
   }
 
   const db = supabaseAdmin();
 
+  let companiesQuery = db.from("visionhub_companies").select("*").order("name", { ascending: true });
+  if (companyFilter) companiesQuery = companiesQuery.eq("slug", companyFilter);
+
+  let paymentsQuery = db.from("visionhub_payments").select("*").eq("month", month);
+  if (companyFilter) paymentsQuery = paymentsQuery.eq("company_slug", companyFilter);
+
   const [{ data: companies, error: companiesError }, { data: videos }, { data: payments }] =
     await Promise.all([
-      db.from("visionhub_companies").select("*").order("name", { ascending: true }),
+      companiesQuery,
       db.from("visionhub_video_deliveries").select("company_slug, video_date, duration_seconds"),
-      db.from("visionhub_payments").select("*").eq("month", month),
+      paymentsQuery,
     ]);
 
   if (companiesError) {

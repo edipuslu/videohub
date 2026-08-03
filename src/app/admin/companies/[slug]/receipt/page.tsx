@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MonthPicker } from "@/components/MonthPicker";
+import { formatAmount } from "@/lib/billing";
 import {
   TRACKING_START,
   aggregateBilling,
@@ -29,6 +30,15 @@ interface VideoRow {
   duration_seconds: number;
 }
 
+interface PaymentRow {
+  pricePerBlock: number;
+  blocksAmount: number;
+  leftoverAmount: number;
+  total: number;
+  status: "paid" | "unpaid";
+  saved: boolean;
+}
+
 export default function ReceiptPage() {
   const { slug } = useParams<{ slug: string }>();
   const searchParams = useSearchParams();
@@ -40,6 +50,8 @@ export default function ReceiptPage() {
     const now = currentMonthKey();
     return now < TRACKING_START ? TRACKING_START : now;
   });
+
+  const [payment, setPayment] = useState<PaymentRow | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +65,19 @@ export default function ReceiptPage() {
       if (videosRes.ok) setVideos(videosData.videos);
     })();
   }, [slug]);
+
+  // Billing is per month, so it reloads whenever the month changes.
+  useEffect(() => {
+    (async () => {
+      const res = await apiFetch(`/api/payments?month=${month}&company=${slug}`);
+      if (!res.ok) {
+        setPayment(null);
+        return;
+      }
+      const data = await res.json();
+      setPayment(data.rows?.[0] ?? null);
+    })();
+  }, [slug, month]);
 
   const availableMonths = useMemo(() => yearOfMonthTabs(), []);
 
@@ -178,6 +203,47 @@ export default function ReceiptPage() {
               <p className="mt-1 text-2xl font-black tabular-nums text-black">{billing.leftover}s</p>
             </div>
           </div>
+
+          {/* Amounts appear once a price has been saved for this month. */}
+          {payment?.saved && payment.pricePerBlock > 0 && (
+            <div className="mt-7 border-t-2 border-vh-line pt-7">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-black uppercase tracking-tight text-black">Amount due</h3>
+                <span
+                  className={`vh-pill ${
+                    payment.status === "paid"
+                      ? "bg-vh-lime text-black print:border print:border-black"
+                      : "border-2 border-vh-line bg-white text-black/45"
+                  }`}
+                >
+                  {payment.status === "paid" ? "Paid" : "Unpaid"}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-sm font-bold text-black/50">
+                  <span>
+                    {billing.blocks} block{billing.blocks === 1 ? "" : "s"} × {payment.pricePerBlock}
+                  </span>
+                  <span className="tabular-nums text-black">{formatAmount(payment.blocksAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm font-bold text-black/50">
+                  <span>
+                    {billing.leftover}s ÷ 15 × {payment.pricePerBlock}
+                  </span>
+                  <span className="tabular-nums text-black">
+                    {formatAmount(payment.leftoverAmount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t-2 border-vh-line pt-3">
+                  <span className="text-base font-black uppercase tracking-wide text-black">Total</span>
+                  <span className="text-3xl font-black tabular-nums text-black">
+                    {formatAmount(payment.total)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <p className="mt-6 text-xs font-bold leading-relaxed text-black/35">
             Billing is calculated on the total seconds delivered this month, pooled together — not per
