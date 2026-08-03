@@ -55,6 +55,14 @@ interface VideoRow {
   created_at: string;
 }
 
+interface CompanyUserRow {
+  id: number;
+  name: string | null;
+  login: string;
+  role: "owner" | "worker";
+  created_at: string;
+}
+
 export default function CompanyAdminDashboardPage() {
   const { slug } = useParams<{ slug: string }>();
   const [company, setCompany] = useState<CompanyDetail | null>(null);
@@ -71,16 +79,28 @@ export default function CompanyAdminDashboardPage() {
   const [deleting, setDeleting] = useState(false);
   const [branchDeleteTarget, setBranchDeleteTarget] = useState<string | null>(null);
   const [deletingBranch, setDeletingBranch] = useState(false);
+  const [users, setUsers] = useState<CompanyUserRow[] | null>(null);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [userDeleteTarget, setUserDeleteTarget] = useState<CompanyUserRow | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   async function load() {
-    const [companyRes, videosRes] = await Promise.all([
+    const [companyRes, videosRes, usersRes] = await Promise.all([
       fetch(`/api/companies/${slug}`),
       fetch(`/api/companies/${slug}/videos`),
+      fetch(`/api/companies/${slug}/users`),
     ]);
     const companyData = await companyRes.json();
     const videosData = await videosRes.json();
     if (companyRes.ok) setCompany(companyData.company);
     if (videosRes.ok) setVideos(videosData.videos);
+    // The users table needs a one-time migration; tolerate it not being ready yet.
+    if (usersRes.ok) {
+      const usersData = await usersRes.json();
+      setUsers(usersData.users);
+    } else {
+      setUsers([]);
+    }
   }
 
   useEffect(() => {
@@ -114,6 +134,15 @@ export default function CompanyAdminDashboardPage() {
     await fetch(`/api/videos/${deleteTarget.id}`, { method: "DELETE" });
     setDeleting(false);
     setDeleteTarget(null);
+    load();
+  }
+
+  async function handleDeleteUser() {
+    if (!userDeleteTarget) return;
+    setDeletingUser(true);
+    await fetch(`/api/users/${userDeleteTarget.id}`, { method: "DELETE" });
+    setDeletingUser(false);
+    setUserDeleteTarget(null);
     load();
   }
 
@@ -346,7 +375,86 @@ export default function CompanyAdminDashboardPage() {
             </table>
           </div>
         )}
+
+        {/* Team access — people who can sign in for this company */}
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t-2 border-vh-line pt-7">
+          <div>
+            <h2 className="text-2xl font-black uppercase tracking-tight text-black">Team access</h2>
+            <p className="mt-1 text-sm font-bold text-black/40">
+              People at {company.name} who can sign in and see this company&rsquo;s deliveries.
+            </p>
+          </div>
+          <button className="vh-btn-primary" onClick={() => setShowUserForm(true)}>
+            + Add person
+          </button>
+        </div>
+
+        <div className="mt-5 overflow-hidden rounded-[1.5rem] border-2 border-vh-line bg-white">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40">
+              <tr>
+                <th className="px-5 py-3.5">Name</th>
+                <th className="px-5 py-3.5">VideoHub ID</th>
+                <th className="px-5 py-3.5">Role</th>
+                <th className="px-5 py-3.5" />
+              </tr>
+            </thead>
+            <tbody className="divide-y-2 divide-vh-line">
+              {/* The company's own shared login always works and can't be removed here. */}
+              <tr className="bg-vh-blue/5">
+                <td className="px-5 py-4 font-black text-black">Company login</td>
+                <td className="px-5 py-4 font-bold text-black/60">{company.login}</td>
+                <td className="px-5 py-4">
+                  <span className="vh-pill bg-vh-blue text-white">Primary</span>
+                </td>
+                <td className="px-5 py-4 text-right">
+                  <span className="text-xs font-bold text-black/25">Built in</span>
+                </td>
+              </tr>
+
+              {users?.map((u) => (
+                <tr key={u.id} className="transition-colors hover:bg-vh-blue/5">
+                  <td className="px-5 py-4 font-black text-black">{u.name ?? "—"}</td>
+                  <td className="px-5 py-4 font-bold text-black/60">{u.login}</td>
+                  <td className="px-5 py-4">
+                    <span
+                      className={`vh-pill ${
+                        u.role === "owner" ? "bg-vh-lime text-black" : "bg-vh-mist text-black/60"
+                      }`}
+                    >
+                      {u.role === "owner" ? "Owner" : "Worker"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4 text-right">
+                    <button className="vh-btn-danger" onClick={() => setUserDeleteTarget(u)}>
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {users !== null && users.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-5 py-6 text-center text-sm font-bold text-black/30">
+                    No extra people yet — add an owner or worker to give them their own login.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </main>
+
+      {showUserForm && (
+        <AddUserModal
+          slug={company.slug}
+          onClose={() => setShowUserForm(false)}
+          onCreated={() => {
+            setShowUserForm(false);
+            load();
+          }}
+        />
+      )}
 
       {showVideoForm && (
         <AddVideoModal
@@ -380,6 +488,17 @@ export default function CompanyAdminDashboardPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDeleteVideo}
         loading={deleting}
+      />
+
+      <ConfirmDialog
+        open={!!userDeleteTarget}
+        title={`Remove ${userDeleteTarget?.name ?? "this person"}?`}
+        description="They will no longer be able to sign in to VideoHub. The company's deliveries are not affected."
+        confirmLabel="Remove"
+        confirmWord="DELETE"
+        onCancel={() => setUserDeleteTarget(null)}
+        onConfirm={handleDeleteUser}
+        loading={deletingUser}
       />
 
       <ConfirmDialog
@@ -571,6 +690,124 @@ function AddBranchModal({
             </button>
             <button type="submit" className="vh-btn-primary" disabled={loading}>
               {loading ? "Adding…" : "Add branch"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddUserModal({
+  slug,
+  onClose,
+  onCreated,
+}: {
+  slug: string;
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"owner" | "worker">("worker");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const res = await fetch(`/api/companies/${slug}/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, login, password, role }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error ?? "Could not add this person.");
+      return;
+    }
+    onCreated();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Add a person</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
+          They get their own VideoHub ID and password, and see only this company&rsquo;s deliveries.
+        </p>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="vh-label">Full name</label>
+            <input
+              className="vh-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Ayse Yilmaz"
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">VideoHub ID</label>
+            <input
+              className="vh-input"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="e.g. ayse@company.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">Password</label>
+            <input
+              className="vh-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Set an initial password"
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">Role</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setRole("owner")}
+                className={`vh-tab flex-1 ${
+                  role === "owner" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
+              >
+                Owner
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("worker")}
+                className={`vh-tab flex-1 ${
+                  role === "worker" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
+              >
+                Worker
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="vh-btn-primary" disabled={loading}>
+              {loading ? "Adding…" : "Add person"}
             </button>
           </div>
         </form>

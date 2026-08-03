@@ -32,8 +32,46 @@ export async function POST(req: Request) {
     return res;
   }
 
-  // 2. Client (company) login.
   const db = supabaseAdmin();
+
+  // 2. Named company user (owner / worker) — each has their own VideoHub ID.
+  const { data: user } = await db
+    .from("visionhub_company_users")
+    .select("id, company_slug, name, login, role, password_hash")
+    .eq("login", videohubId)
+    .maybeSingle();
+
+  if (user) {
+    const ok = user.password_hash ? await verifyPassword(password, user.password_hash) : false;
+    if (!ok) {
+      return NextResponse.json({ error: "Incorrect VideoHub ID or password." }, { status: 401 });
+    }
+
+    const { data: userCompany } = await db
+      .from("visionhub_companies")
+      .select("slug, name")
+      .eq("slug", user.company_slug)
+      .maybeSingle();
+
+    if (!userCompany) {
+      return NextResponse.json({ error: "This account is no longer linked to a company." }, { status: 401 });
+    }
+
+    const token = await createSessionToken({
+      role: "client",
+      companySlug: userCompany.slug,
+      companyName: userCompany.name,
+      loginId: user.login,
+      userName: user.name ?? undefined,
+      userRole: user.role,
+    });
+
+    const res = NextResponse.json({ role: "client", redirect: "/portal" });
+    res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+    return res;
+  }
+
+  // 3. Shared company login (the company's own ID/password).
   const { data: company } = await db
     .from("visionhub_companies")
     .select("slug, name, login, password, password_hash")

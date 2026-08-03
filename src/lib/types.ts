@@ -29,10 +29,25 @@ export interface VideoDelivery {
   created_at: string;
 }
 
+export type CompanyUserRole = "owner" | "worker";
+
+/** A person at a client company with their own VideoHub login. */
+export interface CompanyUser {
+  id: number;
+  company_slug: string;
+  name: string | null;
+  login: string;
+  role: CompanyUserRole;
+  created_at: string;
+}
+
 export interface SessionPayload {
   role: "admin" | "client";
   loginId: string;
   // present for clients
   companySlug?: string;
   companyName?: string;
+  /** Display name + role when signed in as a named company user (not the shared company login). */
+  userName?: string;
+  userRole?: CompanyUserRole;
 }
