@@ -25,6 +25,7 @@ interface CompanyDetail {
 interface VideoRow {
   id: number;
   branch_name: string;
+  title: string | null;
   video_date: string;
   drive_link: string;
   duration_seconds: number;
@@ -131,10 +132,13 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
               {filteredVideos.map((v) => (
                 <div key={v.id} className="vh-card vh-card-hover flex flex-col overflow-hidden">
                   <div className="bg-vh-blue px-5 py-4">
-                    <p className="text-base font-black uppercase leading-tight tracking-tight text-white">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-white/50">
                       {v.branch_name}
                     </p>
-                    <p className="text-xs font-bold text-white/50">{formatDate(v.video_date)}</p>
+                    <p className="mt-0.5 text-base font-black leading-tight text-white">
+                      {v.title || "Video delivery"}
+                    </p>
+                    <p className="mt-1 text-xs font-bold text-white/50">{formatDate(v.video_date)}</p>
                   </div>
 
                   <div className="flex flex-1 flex-col p-5">

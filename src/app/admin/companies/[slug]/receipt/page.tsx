@@ -26,6 +26,7 @@ interface CompanyDetail {
 interface VideoRow {
   id: number;
   branch_name: string;
+  title: string | null;
   video_date: string;
   duration_seconds: number;
 }
@@ -160,8 +161,8 @@ export default function ReceiptPage() {
                 <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40 print:bg-transparent">
                   <tr>
                     <th className="px-4 py-3">Date</th>
+                    <th className="px-4 py-3">Title</th>
                     <th className="px-4 py-3">Branch</th>
-                    <th className="px-4 py-3">Post</th>
                     <th className="px-4 py-3 text-right">Duration</th>
                   </tr>
                 </thead>
@@ -171,8 +172,10 @@ export default function ReceiptPage() {
                       <td className="whitespace-nowrap px-4 py-3 font-black text-black">
                         {formatDate(v.video_date)}
                       </td>
+                      <td className="px-4 py-3 font-bold text-black">
+                        {v.title || "Video delivery"}
+                      </td>
                       <td className="px-4 py-3 font-bold text-black/60">{v.branch_name}</td>
-                      <td className="px-4 py-3 font-bold text-black/60">Post</td>
                       <td className="px-4 py-3 text-right font-black tabular-nums text-black">
                         {v.duration_seconds}s
                       </td>

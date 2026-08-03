@@ -57,6 +57,7 @@ interface VideoRow {
   id: number;
   company_slug: string;
   branch_name: string;
+  title: string | null;
   video_date: string;
   drive_link: string;
   duration_seconds: number;
@@ -362,6 +363,7 @@ export default function CompanyAdminDashboardPage() {
               <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Title</th>
                   <th className="px-5 py-3.5">Branch</th>
                   <th className="px-5 py-3.5">Duration</th>
                   <th className="px-5 py-3.5">Link</th>
@@ -373,6 +375,9 @@ export default function CompanyAdminDashboardPage() {
                   <tr key={v.id} className="transition-colors hover:bg-vh-blue/5">
                     <td className="whitespace-nowrap px-5 py-4 font-black text-black">
                       {formatDate(v.video_date)}
+                    </td>
+                    <td className="px-5 py-4 font-bold text-black">
+                      {v.title || <span className="text-black/25">Untitled</span>}
                     </td>
                     <td className="px-5 py-4 font-bold text-black/60">{v.branch_name}</td>
                     <td className="px-5 py-4 font-black tabular-nums text-black">{v.duration_seconds}s</td>
@@ -606,6 +611,7 @@ function AddVideoModal({
   onCreated: () => void;
 }) {
   const [branchName, setBranchName] = useState(initialBranch ?? branches[0] ?? "");
+  const [title, setTitle] = useState("");
   const [videoDate, setVideoDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [driveLink, setDriveLink] = useState("");
   const [durationSeconds, setDurationSeconds] = useState("");
@@ -625,7 +631,7 @@ function AddVideoModal({
     const res = await apiFetch(`/api/companies/${slug}/videos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ branchName, videoDate, driveLink, durationSeconds: duration }),
+      body: JSON.stringify({ branchName, title, videoDate, driveLink, durationSeconds: duration }),
     });
     const data = await res.json();
     setLoading(false);
@@ -656,6 +662,18 @@ function AddVideoModal({
                 </option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="vh-label">Video title</label>
+            <input
+              className="vh-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. Summer menu promo"
+            />
+            <p className="mt-1.5 text-[11px] font-bold text-black/35">
+              Shown to the client so they know what the video is.
+            </p>
           </div>
           <div>
             <label className="vh-label">Video date</label>
