@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- VideoHub tab icon: the brand blue with a lime V, kept bold so it stays
+       legible at 16px. -->
+  <rect width="64" height="64" rx="14" fill="#0038ff" />
+  <path d="M12 14 L24 14 L32 38 L40 14 L52 14 L38 50 L26 50 Z" fill="#ccff00" />
+</svg>
