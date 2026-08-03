@@ -4,6 +4,7 @@ import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { slugify } from "@/lib/slug";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { encryptSecret, isMissingVaultColumn, withoutVault } from "@/lib/vault";
 
 // GET: list all companies with branch/video stats, for the Companies Dashboard.
 export async function GET() {
@@ -67,11 +68,30 @@ export async function POST(req: Request) {
     slug = `${baseSlug}-${attempt + 1}`;
   }
 
-  const { data: company, error } = await db
+  const payload = {
+    slug,
+    name,
+    login,
+    password_hash,
+    password_vault: encryptSecret(password),
+    branches,
+  };
+  const columns = "slug, name, description, login, branches, color, color_name, created_at";
+
+  let { data: company, error } = await db
     .from("visionhub_companies")
-    .insert({ slug, name, login, password_hash, branches })
-    .select("slug, name, description, login, branches, color, color_name, created_at")
+    .insert(payload)
+    .select(columns)
     .single();
+
+  // Works with or without the password_vault migration applied.
+  if (isMissingVaultColumn(error)) {
+    ({ data: company, error } = await db
+      .from("visionhub_companies")
+      .insert(withoutVault(payload))
+      .select(columns)
+      .single());
+  }
 
   if (error) {
     const message = error.code === "23505" ? "That client login ID is already taken." : error.message;

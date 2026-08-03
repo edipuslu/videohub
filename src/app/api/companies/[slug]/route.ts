@@ -4,6 +4,7 @@ import { requireAdmin, requireClientOrAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { findLoginConflict } from "@/lib/logins";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { encryptSecret, decryptSecret, isMissingVaultColumn, withoutVault } from "@/lib/vault";
 
 // GET: single company detail (used by both the company admin dashboard and the client portal).
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
@@ -16,14 +17,28 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
   const db = supabaseAdmin();
   const { data: company, error } = await db
     .from("visionhub_companies")
-    .select("slug, name, description, login, branches, color, color_name, created_at")
+    // "*" so this still works before the password_vault migration is applied.
+    .select("*")
     .eq("slug", params.slug)
     .maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!company) return NextResponse.json({ error: "Company not found." }, { status: 404 });
 
-  return NextResponse.json({ company: { ...company, branches: company.branches ?? [] } });
+  return NextResponse.json({
+    company: {
+      slug: company.slug,
+      name: company.name,
+      description: company.description,
+      login: company.login,
+      branches: company.branches ?? [],
+      color: company.color,
+      color_name: company.color_name,
+      created_at: company.created_at,
+      // Clients must never receive this — only the Uslu Digital admin.
+      ...(session.role === "admin" ? { password: decryptSecret(company.password_vault) } : {}),
+    },
+  });
 }
 
 // PATCH: edit the company's display name, its shared login ID, and/or its password.
@@ -67,6 +82,7 @@ export async function PATCH(req: Request, { params }: { params: { slug: string }
     });
     if (weak) return NextResponse.json({ error: weak }, { status: 400 });
     update.password_hash = await hashPassword(body.password);
+    update.password_vault = encryptSecret(body.password);
     update.password = null; // clear any legacy plaintext
   }
 
@@ -74,17 +90,31 @@ export async function PATCH(req: Request, { params }: { params: { slug: string }
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
-  const { data, error } = await db
+  const columns = "slug, name, description, login, branches, color, color_name, created_at";
+
+  let { data, error } = await db
     .from("visionhub_companies")
     .update(update)
     .eq("slug", params.slug)
-    .select("slug, name, description, login, branches, color, color_name, created_at")
+    .select(columns)
     .single();
+
+  // Works with or without the password_vault migration applied.
+  if (isMissingVaultColumn(error)) {
+    ({ data, error } = await db
+      .from("visionhub_companies")
+      .update(withoutVault(update))
+      .eq("slug", params.slug)
+      .select(columns)
+      .single());
+  }
 
   if (error) {
     const message = error.code === "23505" ? "That client login ID is already taken." : error.message;
     return NextResponse.json({ error: message }, { status: 400 });
   }
+
+  if (!data) return NextResponse.json({ error: "Company not found." }, { status: 404 });
 
   return NextResponse.json({ company: { ...data, branches: data.branches ?? [] } });
 }

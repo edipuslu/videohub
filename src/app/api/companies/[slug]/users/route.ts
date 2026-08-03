@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { encryptSecret, decryptSecret, isMissingVaultColumn, withoutVault } from "@/lib/vault";
 
 // GET: list the people who can sign in for this company (owners + workers).
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
@@ -12,12 +13,26 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
   const db = supabaseAdmin();
   const { data, error } = await db
     .from("visionhub_company_users")
-    .select("id, company_slug, name, login, role, created_at")
+    // "*" so this still works before the password_vault migration is applied.
+    .select("*")
     .eq("company_slug", params.slug)
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ users: data ?? [] });
+
+  // This route is admin-only, so it's safe to hand back the readable password.
+  // The bcrypt hash never leaves the server.
+  const users = (data ?? []).map((row) => ({
+    id: row.id,
+    company_slug: row.company_slug,
+    name: row.name,
+    login: row.login,
+    role: row.role,
+    created_at: row.created_at,
+    password: decryptSecret(row.password_vault),
+  }));
+
+  return NextResponse.json({ users });
 }
 
 // POST: give another person their own VideoHub ID for this company.
@@ -69,11 +84,30 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
 
   const password_hash = await hashPassword(password);
 
-  const { data, error } = await db
+  const payload = {
+    company_slug: params.slug,
+    name,
+    login,
+    password_hash,
+    password_vault: encryptSecret(password),
+    role,
+  };
+  const columns = "id, company_slug, name, login, role, created_at";
+
+  let { data, error } = await db
     .from("visionhub_company_users")
-    .insert({ company_slug: params.slug, name, login, password_hash, role })
-    .select("id, company_slug, name, login, role, created_at")
+    .insert(payload)
+    .select(columns)
     .single();
+
+  // Adding people must keep working even if the vault migration hasn't run yet.
+  if (isMissingVaultColumn(error)) {
+    ({ data, error } = await db
+      .from("visionhub_company_users")
+      .insert(withoutVault(payload))
+      .select(columns)
+      .single());
+  }
 
   if (error) {
     const message = error.code === "23505" ? "That VideoHub ID is already taken." : error.message;

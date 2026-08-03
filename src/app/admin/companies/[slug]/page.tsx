@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { MonthPicker } from "@/components/MonthPicker";
 import { PasswordFields, isPasswordPairValid } from "@/components/PasswordFields";
+import { SecretCell } from "@/components/SecretCell";
 import {
   TRACKING_START,
   aggregateBilling,
@@ -45,6 +46,8 @@ interface CompanyDetail {
   name: string;
   login: string;
   branches: string[];
+  /** Readable copy of the shared company password (admins only). */
+  password?: string | null;
 }
 
 interface VideoRow {
@@ -63,6 +66,8 @@ interface CompanyUserRow {
   login: string;
   role: "owner" | "worker";
   created_at: string;
+  /** Readable copy of their current password (admins only). */
+  password?: string | null;
 }
 
 export default function CompanyAdminDashboardPage() {
@@ -82,6 +87,7 @@ export default function CompanyAdminDashboardPage() {
   const [branchDeleteTarget, setBranchDeleteTarget] = useState<string | null>(null);
   const [deletingBranch, setDeletingBranch] = useState(false);
   const [users, setUsers] = useState<CompanyUserRow[] | null>(null);
+  const [usersError, setUsersError] = useState<string | null>(null);
   const [showUserForm, setShowUserForm] = useState(false);
   const [editUserTarget, setEditUserTarget] = useState<CompanyUserRow | null>(null);
   const [userDeleteTarget, setUserDeleteTarget] = useState<CompanyUserRow | null>(null);
@@ -98,12 +104,17 @@ export default function CompanyAdminDashboardPage() {
     const videosData = await videosRes.json();
     if (companyRes.ok) setCompany(companyData.company);
     if (videosRes.ok) setVideos(videosData.videos);
-    // The users table needs a one-time migration; tolerate it not being ready yet.
+
     if (usersRes.ok) {
       const usersData = await usersRes.json();
       setUsers(usersData.users);
+      setUsersError(null);
     } else {
+      // Never show an empty team list when the fetch actually failed — that
+      // reads as "nobody has access" when the truth is "we don't know".
+      const err = await usersRes.json().catch(() => null);
       setUsers([]);
+      setUsersError(err?.error ?? "Could not load team access.");
     }
   }
 
@@ -399,6 +410,7 @@ export default function CompanyAdminDashboardPage() {
               <tr>
                 <th className="px-5 py-3.5">Name</th>
                 <th className="px-5 py-3.5">VideoHub ID</th>
+                <th className="px-5 py-3.5">Password</th>
                 <th className="px-5 py-3.5">Role</th>
                 <th className="px-5 py-3.5" />
               </tr>
@@ -408,6 +420,9 @@ export default function CompanyAdminDashboardPage() {
               <tr className="bg-vh-blue/5">
                 <td className="px-5 py-4 font-black text-black">Company login</td>
                 <td className="px-5 py-4 font-bold text-black/60">{company.login}</td>
+                <td className="px-5 py-4">
+                  <SecretCell value={company.password ?? null} />
+                </td>
                 <td className="px-5 py-4">
                   <span className="vh-pill bg-vh-blue text-white">Primary</span>
                 </td>
@@ -422,6 +437,9 @@ export default function CompanyAdminDashboardPage() {
                 <tr key={u.id} className="transition-colors hover:bg-vh-blue/5">
                   <td className="px-5 py-4 font-black text-black">{u.name ?? "—"}</td>
                   <td className="px-5 py-4 font-bold text-black/60">{u.login}</td>
+                  <td className="px-5 py-4">
+                    <SecretCell value={u.password ?? null} />
+                  </td>
                   <td className="px-5 py-4">
                     <span
                       className={`vh-pill ${
@@ -444,9 +462,17 @@ export default function CompanyAdminDashboardPage() {
                 </tr>
               ))}
 
-              {users !== null && users.length === 0 && (
+              {usersError && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-6 text-center text-sm font-bold text-black/30">
+                  <td colSpan={5} className="px-5 py-6 text-center text-sm font-bold text-red-600">
+                    {usersError}
+                  </td>
+                </tr>
+              )}
+
+              {!usersError && users !== null && users.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-5 py-6 text-center text-sm font-bold text-black/30">
                     No extra people yet — add an owner or worker to give them their own login.
                   </td>
                 </tr>

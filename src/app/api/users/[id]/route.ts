@@ -4,6 +4,7 @@ import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { findLoginConflict } from "@/lib/logins";
 import { validatePassword } from "@/lib/passwordPolicy";
+import { encryptSecret, isMissingVaultColumn, withoutVault } from "@/lib/vault";
 
 // PATCH: edit a person's name, VideoHub ID, role, and/or password.
 // Only the fields present in the body are changed.
@@ -52,18 +53,31 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     });
     if (weak) return NextResponse.json({ error: weak }, { status: 400 });
     update.password_hash = await hashPassword(body.password);
+    update.password_vault = encryptSecret(body.password);
   }
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
-  const { data, error } = await db
+  const columns = "id, company_slug, name, login, role, created_at";
+
+  let { data, error } = await db
     .from("visionhub_company_users")
     .update(update)
     .eq("id", id)
-    .select("id, company_slug, name, login, role, created_at")
+    .select(columns)
     .single();
+
+  // Works with or without the password_vault migration applied.
+  if (isMissingVaultColumn(error)) {
+    ({ data, error } = await db
+      .from("visionhub_company_users")
+      .update(withoutVault(update))
+      .eq("id", id)
+      .select(columns)
+      .single());
+  }
 
   if (error) {
     const message = error.code === "23505" ? "That VideoHub ID is already taken." : error.message;
