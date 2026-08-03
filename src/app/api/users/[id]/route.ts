@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { findLoginConflict } from "@/lib/logins";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 // PATCH: edit a person's name, VideoHub ID, role, and/or password.
 // Only the fields present in the body are changed.
@@ -45,6 +46,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   if (typeof body?.password === "string" && body.password.length > 0) {
+    const weak = validatePassword(body.password, {
+      login: (update.login as string) ?? existing.login,
+      name: update.name as string | undefined,
+    });
+    if (weak) return NextResponse.json({ error: weak }, { status: 400 });
     update.password_hash = await hashPassword(body.password);
   }
 

@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, requireClientOrAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { findLoginConflict } from "@/lib/logins";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 // GET: single company detail (used by both the company admin dashboard and the client portal).
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
@@ -60,6 +61,11 @@ export async function PATCH(req: Request, { params }: { params: { slug: string }
   }
 
   if (typeof body?.password === "string" && body.password.length > 0) {
+    const weak = validatePassword(body.password, {
+      login: (update.login as string) ?? existing.login,
+      name: update.name as string | undefined,
+    });
+    if (weak) return NextResponse.json({ error: weak }, { status: 400 });
     update.password_hash = await hashPassword(body.password);
     update.password = null; // clear any legacy plaintext
   }

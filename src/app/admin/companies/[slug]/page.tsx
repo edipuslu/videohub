@@ -9,6 +9,7 @@ import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { MonthPicker } from "@/components/MonthPicker";
+import { PasswordFields, isPasswordPairValid } from "@/components/PasswordFields";
 import {
   TRACKING_START,
   aggregateBilling,
@@ -743,6 +744,7 @@ function AddUserModal({
   const [name, setName] = useState("");
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [role, setRole] = useState<"owner" | "worker">("worker");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -794,17 +796,14 @@ function AddUserModal({
               required
             />
           </div>
-          <div>
-            <label className="vh-label">Password</label>
-            <input
-              className="vh-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Set an initial password"
-              required
-            />
-          </div>
+          <PasswordFields
+            idPrefix="add-user"
+            password={password}
+            confirm={confirm}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirm}
+            context={{ login, name }}
+          />
           <div>
             <label className="vh-label">Role</label>
             <div className="flex gap-2">
@@ -839,7 +838,11 @@ function AddUserModal({
             <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="vh-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="vh-btn-primary"
+              disabled={loading || !isPasswordPairValid(password, confirm, { context: { login, name } })}
+            >
               {loading ? "Adding…" : "Add person"}
             </button>
           </div>
@@ -862,6 +865,7 @@ function EditUserModal({
   const [login, setLogin] = useState(user.login);
   const [role, setRole] = useState<"owner" | "worker">(user.role);
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -910,17 +914,16 @@ function EditUserModal({
               required
             />
           </div>
-          <div>
-            <label className="vh-label">New password (optional)</label>
-            <input
-              className="vh-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Leave blank to keep current"
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordFields
+            label="New password"
+            idPrefix="edit-user"
+            optional
+            password={password}
+            confirm={confirm}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirm}
+            context={{ login, name }}
+          />
           <div>
             <label className="vh-label">Role</label>
             <div className="flex gap-2">
@@ -955,7 +958,11 @@ function EditUserModal({
             <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="vh-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="vh-btn-primary"
+              disabled={loading || !isPasswordPairValid(password, confirm, { optional: true, context: { login } })}
+            >
               {loading ? "Saving…" : "Save changes"}
             </button>
           </div>
@@ -978,6 +985,7 @@ function EditCompanyLoginModal({
 }) {
   const [login, setLogin] = useState(currentLogin);
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -1018,17 +1026,16 @@ function EditCompanyLoginModal({
               required
             />
           </div>
-          <div>
-            <label className="vh-label">New password (optional)</label>
-            <input
-              className="vh-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Leave blank to keep current"
-              autoComplete="new-password"
-            />
-          </div>
+          <PasswordFields
+            label="New password"
+            idPrefix="edit-company"
+            optional
+            password={password}
+            confirm={confirm}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirm}
+            context={{ login }}
+          />
 
           {error && (
             <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
@@ -1040,7 +1047,11 @@ function EditCompanyLoginModal({
             <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="vh-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="vh-btn-primary"
+              disabled={loading || !isPasswordPairValid(password, confirm, { optional: true, context: { login } })}
+            >
               {loading ? "Saving…" : "Save changes"}
             </button>
           </div>

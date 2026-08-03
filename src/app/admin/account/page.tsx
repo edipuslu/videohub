@@ -4,6 +4,7 @@ import { apiFetch } from "@/lib/api";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Topbar } from "@/components/Topbar";
+import { PasswordFields, isPasswordPairValid } from "@/components/PasswordFields";
 
 interface Account {
   login: string;
@@ -37,11 +38,6 @@ export default function AdminAccountPage() {
     e.preventDefault();
     setError(null);
     setSaved(false);
-
-    if (password && password !== confirm) {
-      setError("The new passwords do not match.");
-      return;
-    }
 
     setSaving(true);
     const res = await apiFetch("/api/account", {
@@ -128,35 +124,17 @@ export default function AdminAccountPage() {
               Leave the new password blank to keep your current one.
             </p>
 
-            <div className="mt-5 space-y-5">
-              <div>
-                <label className="vh-label" htmlFor="acc-new">
-                  New password
-                </label>
-                <input
-                  id="acc-new"
-                  type="password"
-                  className="vh-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                />
-              </div>
-              <div>
-                <label className="vh-label" htmlFor="acc-confirm">
-                  Confirm new password
-                </label>
-                <input
-                  id="acc-confirm"
-                  type="password"
-                  className="vh-input"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                />
-              </div>
+            <div className="mt-5">
+              <PasswordFields
+                label="New password"
+                idPrefix="acc"
+                optional
+                password={password}
+                confirm={confirm}
+                onPasswordChange={setPassword}
+                onConfirmChange={setConfirm}
+                context={{ login, name }}
+              />
             </div>
           </div>
 
@@ -189,7 +167,11 @@ export default function AdminAccountPage() {
           )}
 
           <div className="flex justify-end">
-            <button type="submit" className="vh-btn-primary" disabled={saving}>
+            <button
+              type="submit"
+              className="vh-btn-primary"
+              disabled={saving || !isPasswordPairValid(password, confirm, { optional: true, context: { login, name } })}
+            >
               {saving ? "Saving…" : "Save changes"}
             </button>
           </div>

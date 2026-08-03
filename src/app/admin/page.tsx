@@ -7,6 +7,7 @@ import { Topbar } from "@/components/Topbar";
 import { StatCard } from "@/components/StatCard";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { PasswordFields, isPasswordPairValid } from "@/components/PasswordFields";
 
 interface CompanyRow {
   slug: string;
@@ -176,6 +177,7 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [name, setName] = useState("");
   const [clientLoginId, setClientLoginId] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [branchesText, setBranchesText] = useState("Restaurant, Hotel, Pharmacy");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -234,17 +236,15 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
               required
             />
           </div>
-          <div>
-            <label className="vh-label">Client password</label>
-            <input
-              className="vh-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Set an initial password"
-              required
-            />
-          </div>
+          <PasswordFields
+            label="Client password"
+            idPrefix="new-company"
+            password={password}
+            confirm={confirm}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirm}
+            context={{ login: clientLoginId, name }}
+          />
           <div>
             <label className="vh-label">Branches / sections (comma-separated)</label>
             <input
@@ -265,7 +265,11 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
             <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
               Cancel
             </button>
-            <button type="submit" className="vh-btn-primary" disabled={loading}>
+            <button
+              type="submit"
+              className="vh-btn-primary"
+              disabled={loading || !isPasswordPairValid(password, confirm, { context: { login: clientLoginId, name } })}
+            >
               {loading ? "Creating…" : "Create company"}
             </button>
           </div>

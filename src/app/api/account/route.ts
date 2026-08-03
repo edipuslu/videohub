@@ -4,6 +4,7 @@ import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { createSessionToken, SESSION_COOKIE, sessionCookieOptions } from "@/lib/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { findLoginConflict } from "@/lib/logins";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 /** The signed-in admin, whether they came from the database or the env bootstrap. */
 async function currentAdmin(loginId: string) {
@@ -71,6 +72,11 @@ export async function PATCH(req: Request) {
       adminId: admin.id ?? undefined,
     });
     if (conflict) return NextResponse.json({ error: conflict }, { status: 400 });
+  }
+
+  if (newPassword) {
+    const weak = validatePassword(newPassword, { login: nextLogin, name: nextName ?? undefined });
+    if (weak) return NextResponse.json({ error: weak }, { status: 400 });
   }
 
   const password_hash = newPassword ? await hashPassword(newPassword) : admin.password_hash;

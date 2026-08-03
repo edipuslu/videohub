@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
 import { slugify } from "@/lib/slug";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 // GET: list all companies with branch/video stats, for the Companies Dashboard.
 export async function GET() {
@@ -47,6 +48,9 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+
+  const weak = validatePassword(password, { login, name });
+  if (weak) return NextResponse.json({ error: weak }, { status: 400 });
 
   const db = supabaseAdmin();
   const password_hash = await hashPassword(password);

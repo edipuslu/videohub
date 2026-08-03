@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { requireAdmin, isResponse } from "@/lib/apiGuard";
 import { hashPassword } from "@/lib/password";
+import { validatePassword } from "@/lib/passwordPolicy";
 
 // GET: list the people who can sign in for this company (owners + workers).
 export async function GET(_req: Request, { params }: { params: { slug: string } }) {
@@ -62,6 +63,9 @@ export async function POST(req: Request, { params }: { params: { slug: string } 
   if (clash) {
     return NextResponse.json({ error: "That VideoHub ID is already taken." }, { status: 400 });
   }
+
+  const weakPassword = validatePassword(password, { login, name });
+  if (weakPassword) return NextResponse.json({ error: weakPassword }, { status: 400 });
 
   const password_hash = await hashPassword(password);
 
