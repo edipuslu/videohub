@@ -51,26 +51,24 @@ export default function CompaniesDashboardPage() {
         title="Companies Dashboard"
         subtitle="Uslu Digital admin"
         right={
-          <button className="vh-btn-primary" onClick={() => setShowForm(true)}>
+          <button className="vh-btn-onblue" onClick={() => setShowForm(true)}>
             + New company
           </button>
         }
       />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-10">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Total companies" value={totalCompanies} />
+          <StatCard label="Total companies" value={totalCompanies} accent />
           <StatCard label="Total sections / branches" value={totalBranches} />
           <StatCard label="Total video requests / deliveries" value={totalVideos} />
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Client companies
-          </h2>
+        <div className="mt-10">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-black">Client companies</h2>
 
           {companies === null && (
-            <p className="mt-4 text-sm text-ink-400">Loading companies…</p>
+            <p className="mt-4 text-sm font-bold text-black/35">Loading companies…</p>
           )}
 
           {companies?.length === 0 && (
@@ -82,16 +80,18 @@ export default function CompaniesDashboardPage() {
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {companies?.map((c) => (
-              <div key={c.slug} className="vh-card vh-card-hover flex flex-col p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-ink-900">{c.name}</h3>
-                    <p className="mt-0.5 text-xs text-ink-400">ID: {c.login}</p>
+              <div key={c.slug} className="vh-card vh-card-hover flex flex-col p-6">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="truncate text-xl font-black uppercase tracking-tight text-black">
+                      {c.name}
+                    </h3>
+                    <p className="mt-0.5 truncate text-xs font-bold text-black/35">ID: {c.login}</p>
                   </div>
                   <button
-                    className="vh-btn-danger"
+                    className="vh-btn-danger shrink-0"
                     onClick={() => setDeleteTarget(c)}
                     title="Delete company"
                   >
@@ -99,35 +99,43 @@ export default function CompaniesDashboardPage() {
                   </button>
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-brand-50 px-3 py-2">
-                    <p className="text-lg font-semibold text-brand-800">{c.branches.length}</p>
-                    <p className="text-[11px] uppercase tracking-wide text-brand-600">Sections</p>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-vh-bright px-4 py-3">
+                    <p className="text-2xl font-black tabular-nums leading-none text-white">
+                      {c.branches.length}
+                    </p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-white/60">
+                      Sections
+                    </p>
                   </div>
-                  <div className="rounded-lg bg-brand-50 px-3 py-2">
-                    <p className="text-lg font-semibold text-brand-800">{c.video_count}</p>
-                    <p className="text-[11px] uppercase tracking-wide text-brand-600">Deliveries</p>
+                  <div className="rounded-2xl bg-vh-lime px-4 py-3">
+                    <p className="text-2xl font-black tabular-nums leading-none text-black">
+                      {c.video_count}
+                    </p>
+                    <p className="mt-1 text-[10px] font-black uppercase tracking-wide text-black/50">
+                      Deliveries
+                    </p>
                   </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-1.5">
+                <div className="mt-5 flex flex-wrap gap-1.5">
                   {c.branches.slice(0, 4).map((b) => (
-                    <span key={b} className="vh-pill bg-ink-50 text-ink-600">
+                    <span key={b} className="vh-pill bg-vh-mist text-black/60">
                       {b}
                     </span>
                   ))}
                   {c.branches.length > 4 && (
-                    <span className="vh-pill bg-ink-50 text-ink-500">
+                    <span className="vh-pill bg-vh-mist text-black/40">
                       +{c.branches.length - 4} more
                     </span>
                   )}
                   {c.branches.length === 0 && (
-                    <span className="text-xs text-ink-400">No sections added yet</span>
+                    <span className="text-xs font-bold text-black/30">No sections added yet</span>
                   )}
                 </div>
 
-                <Link href={`/admin/companies/${c.slug}`} className="vh-btn-secondary mt-5 w-full">
-                  Open dashboard
+                <Link href={`/admin/companies/${c.slug}`} className="vh-btn-primary mt-6 w-full">
+                  Open dashboard →
                 </Link>
               </div>
             ))}
@@ -192,14 +200,14 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
-      <div className="w-full max-w-md rounded-xl2 bg-white p-6 shadow-cardHover">
-        <h3 className="text-base font-semibold text-ink-900">New client company</h3>
-        <p className="mt-1 text-sm text-ink-500">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">New client company</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
           Set up the company&rsquo;s VideoHub login and initial branches or sections.
         </p>
 
-        <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="vh-label">Company name</label>
             <input
@@ -242,7 +250,7 @@ function NewCompanyModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
               {error}
             </div>
           )}

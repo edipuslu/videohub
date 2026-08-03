@@ -2,17 +2,27 @@ export function StatCard({
   label,
   value,
   hint,
+  accent = false,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  /** Highlight the headline metric in lime. */
+  accent?: boolean;
 }) {
   return (
-    <div className="vh-card relative overflow-hidden p-5">
-      <span className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-brand-500 via-brand-600 to-gold-400" />
-      <p className="text-xs font-medium uppercase tracking-wide text-ink-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tabular-nums text-ink-900">{value}</p>
-      {hint && <p className="mt-1 text-xs text-ink-400">{hint}</p>}
+    <div
+      className={`relative flex flex-col overflow-hidden rounded-[1.5rem] border-2 p-5 transition-all duration-200 ${
+        accent ? "border-vh-lime bg-vh-lime" : "border-vh-line bg-white"
+      }`}
+    >
+      <p className={`text-[11px] font-black uppercase tracking-wide ${accent ? "text-black/60" : "text-black/40"}`}>
+        {label}
+      </p>
+      <p className="mt-2 text-3xl font-black tabular-nums leading-none text-black">{value}</p>
+      {hint && (
+        <p className={`mt-1.5 text-[11px] font-bold ${accent ? "text-black/50" : "text-black/35"}`}>{hint}</p>
+      )}
     </div>
   );
 }

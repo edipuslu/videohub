@@ -20,22 +20,32 @@ export function Topbar({
   }
 
   return (
-    <header className="sticky top-0 z-10 border-b border-white/10 bg-ink-950">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-gold-400/40 bg-white/5 font-display text-sm font-semibold text-gold-300">
-            V
+    <header className="relative overflow-hidden bg-vh-blue">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff18_1px,transparent_1px),linear-gradient(to_bottom,#ffffff18_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+
+      <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
+        <div className="flex items-center gap-4">
+          {/* VIDEO / HUB lockup, same as the login hero */}
+          <div className="flex items-center gap-1">
+            <span className="rounded-xl rounded-bl-sm bg-white px-2.5 py-1 text-[11px] font-black text-black">
+              VIDEO
+            </span>
+            <span className="rounded-full border-2 border-white bg-vh-lime px-2.5 py-1 text-[11px] font-black text-black">
+              HUB
+            </span>
           </div>
+
+          <div className="hidden h-8 w-px bg-white/20 sm:block" />
+
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-sm font-semibold text-white">VideoHub</span>
-              <span className="text-white/20">/</span>
-              <span className="text-sm text-white/60">{title}</span>
-            </div>
-            {subtitle && <p className="text-xs text-white/35">{subtitle}</p>}
+            <p className="text-lg font-black uppercase leading-tight tracking-tight text-white">{title}</p>
+            {subtitle && (
+              <p className="text-xs font-bold uppercase tracking-wide text-white/50">{subtitle}</p>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-2">
           {right}
           <button onClick={logout} className="vh-btn-ghost-dark">
             Sign out

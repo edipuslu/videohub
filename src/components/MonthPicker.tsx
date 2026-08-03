@@ -30,8 +30,8 @@ export function MonthPicker({
             <button
               key={y}
               onClick={() => setActiveYear(y)}
-              className={`rounded-md px-2 py-0.5 text-xs font-semibold transition-colors ${
-                y === activeYear ? "text-brand-700" : "text-ink-400 hover:text-brand-600"
+              className={`rounded-full px-2.5 py-0.5 text-xs font-black transition-colors ${
+                y === activeYear ? "bg-vh-lime text-black" : "text-black/35 hover:text-vh-blue"
               }`}
             >
               {y}
@@ -39,7 +39,7 @@ export function MonthPicker({
           ))}
         </div>
       )}
-      <div className="flex flex-wrap justify-end gap-1.5 rounded-xl2 border border-ink-100 bg-white p-1.5">
+      <div className="flex flex-wrap justify-end gap-1 rounded-full border-2 border-vh-line bg-white p-1.5">
         {monthsInYear.map((m) => (
           <button
             key={m}

@@ -18,8 +18,25 @@ import {
   yearOfMonthTabs,
 } from "@/lib/postType";
 
-// Matches the reference card's literal color variants (green/orange/red/blue).
-const BRANCH_CARD_COLORS = ["#01c3a8", "#ffb741", "#a63d2a", "#1890ff"];
+// Branch cards alternate the brand's blue/lime pairing, same as the login hero.
+const BRANCH_VARIANTS = [
+  {
+    bg: "#0038ff",
+    title: "text-white",
+    muted: "text-white/60",
+    track: "bg-white/20",
+    bar: "bg-vh-lime",
+    chip: "bg-white/15 text-white hover:bg-white/25",
+  },
+  {
+    bg: "#ccff00",
+    title: "text-black",
+    muted: "text-black/50",
+    track: "bg-black/15",
+    bar: "bg-vh-blue",
+    chip: "bg-black/10 text-black hover:bg-black/20",
+  },
+];
 
 interface CompanyDetail {
   slug: string;
@@ -118,8 +135,8 @@ export default function CompanyAdminDashboardPage() {
     return (
       <>
         <Topbar title="Company dashboard" subtitle="Uslu Digital admin" />
-        <main className="mx-auto max-w-6xl px-6 py-8">
-          <p className="text-sm text-ink-400">Loading company…</p>
+        <main className="mx-auto max-w-7xl px-6 py-10">
+          <p className="text-sm font-bold text-black/35">Loading company…</p>
         </main>
       </>
     );
@@ -132,17 +149,20 @@ export default function CompanyAdminDashboardPage() {
         subtitle="Uslu Digital admin"
         right={
           <>
-            <Link href="/admin" className="vh-btn-secondary">
+            <Link href="/admin" className="vh-btn-ghost-dark">
               ← Companies
             </Link>
-            <Link href={`/admin/companies/${company.slug}/receipt?month=${month}`} className="vh-btn-secondary">
+            <Link
+              href={`/admin/companies/${company.slug}/receipt?month=${month}`}
+              className="vh-btn-ghost-dark"
+            >
               Print receipt
             </Link>
-            <button className="vh-btn-secondary" onClick={() => setShowBranchForm(true)}>
+            <button className="vh-btn-ghost-dark" onClick={() => setShowBranchForm(true)}>
               + Branch
             </button>
             <button
-              className="vh-btn-primary"
+              className="vh-btn-onblue"
               onClick={() => {
                 setVideoFormBranch(null);
                 setShowVideoForm(true);
@@ -154,42 +174,44 @@ export default function CompanyAdminDashboardPage() {
         }
       />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-ink-900">{company.name}</h1>
-            <p className="text-sm text-ink-500">Client login ID: {company.login}</p>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-black">{company.name}</h1>
+            <p className="mt-1 text-sm font-bold text-black/40">Client login ID: {company.login}</p>
           </div>
 
           <MonthPicker months={availableMonths} value={month} onChange={setMonth} />
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-5">
           <StatCard label="Videos this month" value={monthVideos.length} />
           <StatCard label="Total seconds" value={totalSeconds} />
           <StatCard label="Sections" value={company.branches.length} />
-          <StatCard label="Billable blocks (15s)" value={billing.blocks} hint="Full 15s blocks, pooled" />
+          <StatCard label="Billable blocks (15s)" value={billing.blocks} hint="Full 15s blocks, pooled" accent />
           <StatCard label="Leftover seconds" value={billing.leftover} hint="Unbilled remainder" />
         </div>
 
         {company.branches.length > 0 && (
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {company.branches.map((b, i) => {
-              const color = BRANCH_CARD_COLORS[i % BRANCH_CARD_COLORS.length];
+              const v = BRANCH_VARIANTS[i % BRANCH_VARIANTS.length];
               const count = branchTotals.get(b) ?? 0;
               const sharePercent = monthVideos.length > 0 ? Math.round((count / monthVideos.length) * 100) : 0;
               return (
                 <div
                   key={b}
-                  style={{ backgroundColor: color }}
-                  className="group relative flex flex-col overflow-hidden rounded-2xl p-4 text-white shadow-card transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-cardHover"
+                  style={{ backgroundColor: v.bg }}
+                  className={`group relative flex flex-col overflow-hidden rounded-[1.5rem] p-5 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg ${v.title}`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs text-white/70">{monthLabel(month)}</span>
+                    <span className={`text-[11px] font-black uppercase tracking-wide ${v.muted}`}>
+                      {monthLabel(month)}
+                    </span>
                     <button
                       onClick={() => setBranchDeleteTarget(b)}
                       title={`Delete ${b}`}
-                      className="shrink-0 rounded-md p-1 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                      className={`shrink-0 rounded-full p-1 transition-colors ${v.chip}`}
                     >
                       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
                         <circle cx="12" cy="5" r="1.6" />
@@ -199,37 +221,40 @@ export default function CompanyAdminDashboardPage() {
                     </button>
                   </div>
 
-                  <h3 className="mt-3 text-base font-semibold leading-snug">{b}</h3>
-                  <p className="text-sm text-white/70">
+                  <h3 className="mt-3 text-lg font-black uppercase leading-tight tracking-tight">{b}</h3>
+                  <p className={`text-sm font-bold ${v.muted}`}>
                     {count} deliver{count === 1 ? "y" : "ies"} logged
                   </p>
 
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-[11px] text-white/70">
+                  <div className="mt-5">
+                    <div className={`flex items-center justify-between text-[11px] font-black ${v.muted}`}>
                       <span>Share of month</span>
                       <span>{sharePercent}%</span>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/20">
-                      <div className="h-full rounded-full bg-white" style={{ width: `${sharePercent}%` }} />
+                    <div className={`mt-1.5 h-2 w-full overflow-hidden rounded-full ${v.track}`}>
+                      <div
+                        className={`h-full rounded-full ${v.bar}`}
+                        style={{ width: `${sharePercent}%` }}
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between">
+                  <div className="mt-5 flex items-center justify-between">
                     <button
                       onClick={() => {
                         setVideoFormBranch(b);
                         setShowVideoForm(true);
                       }}
                       title={`Add delivery for ${b}`}
-                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${v.chip}`}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4">
                         <path strokeLinecap="round" d="M12 5v14M5 12h14" />
                       </svg>
                     </button>
                     <button
                       onClick={() => setBranchFilter(b)}
-                      className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium transition-colors hover:bg-white/25"
+                      className={`rounded-full px-3 py-1.5 text-[11px] font-black transition-colors ${v.chip}`}
                     >
                       View →
                     </button>
@@ -240,15 +265,17 @@ export default function CompanyAdminDashboardPage() {
           </div>
         )}
 
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 pt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-500">
-            Deliveries <span className="text-ink-300">·</span> {monthLabel(month)}
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t-2 border-vh-line pt-7">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-black">
+            Deliveries <span className="text-black/20">·</span> {monthLabel(month)}
           </h2>
           {company.branches.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               <button
                 onClick={() => setBranchFilter("all")}
-                className={`vh-tab ${branchFilter === "all" ? "vh-tab-active" : "bg-white border border-ink-100"}`}
+                className={`vh-tab ${
+                  branchFilter === "all" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
               >
                 All branches
               </button>
@@ -256,7 +283,9 @@ export default function CompanyAdminDashboardPage() {
                 <button
                   key={b}
                   onClick={() => setBranchFilter(b)}
-                  className={`vh-tab ${branchFilter === b ? "vh-tab-active" : "bg-white border border-ink-100"}`}
+                  className={`vh-tab ${
+                    branchFilter === b ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                  }`}
                 >
                   {b}
                 </button>
@@ -265,7 +294,7 @@ export default function CompanyAdminDashboardPage() {
           )}
         </div>
 
-        {videos === null && <p className="mt-4 text-sm text-ink-400">Loading deliveries…</p>}
+        {videos === null && <p className="mt-4 text-sm font-bold text-black/35">Loading deliveries…</p>}
 
         {videos !== null && filteredVideos.length === 0 && (
           <div className="mt-4">
@@ -277,36 +306,36 @@ export default function CompanyAdminDashboardPage() {
         )}
 
         {filteredVideos.length > 0 && (
-          <div className="mt-4 overflow-hidden rounded-xl2 border border-ink-100 bg-white shadow-card">
+          <div className="mt-5 overflow-hidden rounded-[1.5rem] border-2 border-vh-line bg-white">
             <table className="w-full text-left text-sm">
-              <thead className="bg-ink-50 text-xs uppercase tracking-wide text-ink-500">
+              <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40">
                 <tr>
-                  <th className="px-4 py-3">Date</th>
-                  <th className="px-4 py-3">Branch</th>
-                  <th className="px-4 py-3">Duration</th>
-                  <th className="px-4 py-3">Link</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Branch</th>
+                  <th className="px-5 py-3.5">Duration</th>
+                  <th className="px-5 py-3.5">Link</th>
+                  <th className="px-5 py-3.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-100">
+              <tbody className="divide-y-2 divide-vh-line">
                 {filteredVideos.map((v) => (
-                  <tr key={v.id} className="transition-colors hover:bg-brand-50/40">
-                    <td className="whitespace-nowrap px-4 py-3 font-medium text-ink-700">
+                  <tr key={v.id} className="transition-colors hover:bg-vh-blue/5">
+                    <td className="whitespace-nowrap px-5 py-4 font-black text-black">
                       {formatDate(v.video_date)}
                     </td>
-                    <td className="px-4 py-3 text-ink-700">{v.branch_name}</td>
-                    <td className="px-4 py-3 tabular-nums text-ink-700">{v.duration_seconds}s</td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4 font-bold text-black/60">{v.branch_name}</td>
+                    <td className="px-5 py-4 font-black tabular-nums text-black">{v.duration_seconds}s</td>
+                    <td className="px-5 py-4">
                       <a
                         href={v.drive_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-medium text-brand-700 hover:underline"
+                        className="inline-flex items-center gap-1 font-black text-vh-bright hover:underline"
                       >
-                        Open video
+                        Open video →
                       </a>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-5 py-4 text-right">
                       <button className="vh-btn-danger" onClick={() => setDeleteTarget(v)}>
                         Delete
                       </button>
@@ -411,10 +440,10 @@ function AddVideoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
-      <div className="w-full max-w-md rounded-xl2 bg-white p-6 shadow-cardHover">
-        <h3 className="text-base font-semibold text-ink-900">Log a video delivery</h3>
-        <p className="mt-1 text-sm text-ink-500">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Log a video delivery</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
           Billing is calculated from the pooled total seconds delivered each month, in full 15-second
           blocks.
         </p>
@@ -466,7 +495,7 @@ function AddVideoModal({
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
               {error}
             </div>
           )}
@@ -517,9 +546,9 @@ function AddBranchModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
-      <div className="w-full max-w-sm rounded-xl2 bg-white p-6 shadow-cardHover">
-        <h3 className="text-base font-semibold text-ink-900">Add a branch / section</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Add a branch / section</h3>
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="vh-label">Branch name</label>
@@ -532,7 +561,7 @@ function AddBranchModal({
             />
           </div>
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
               {error}
             </div>
           )}

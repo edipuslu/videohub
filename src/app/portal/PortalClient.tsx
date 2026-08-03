@@ -73,27 +73,31 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
     <>
       <Topbar title="Delivery Portal" subtitle={companyName || "Client portal"} />
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-ink-900">{companyName}</h1>
-            <p className="text-sm text-ink-500">Your completed AI video deliveries from Uslu Digital.</p>
+            <h1 className="text-3xl font-black uppercase tracking-tight text-black">{companyName}</h1>
+            <p className="mt-1 text-sm font-bold text-black/40">
+              Your completed AI video deliveries from Uslu Digital.
+            </p>
           </div>
 
           <MonthPicker months={availableMonths} value={month} onChange={setMonth} />
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <StatCard label="Videos delivered" value={monthVideos.length} hint={monthLabel(month)} />
+        <div className="mt-7 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <StatCard label="Videos delivered" value={monthVideos.length} hint={monthLabel(month)} accent />
           <StatCard label="Total seconds" value={totalSeconds} />
           <StatCard label="Billable blocks (15s)" value={billing.blocks} />
         </div>
 
         {company && company.branches.length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-1.5">
+          <div className="mt-7 flex flex-wrap gap-1.5">
             <button
               onClick={() => setBranchFilter("all")}
-              className={`vh-tab ${branchFilter === "all" ? "vh-tab-active" : "bg-white border border-ink-100"}`}
+              className={`vh-tab ${
+                branchFilter === "all" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+              }`}
             >
               All branches
             </button>
@@ -101,7 +105,9 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
               <button
                 key={b}
                 onClick={() => setBranchFilter(b)}
-                className={`vh-tab ${branchFilter === b ? "vh-tab-active" : "bg-white border border-ink-100"}`}
+                className={`vh-tab ${
+                  branchFilter === b ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
               >
                 {b}
               </button>
@@ -109,8 +115,8 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
           </div>
         )}
 
-        <div className="mt-6">
-          {videos === null && <p className="text-sm text-ink-400">Loading your deliveries…</p>}
+        <div className="mt-7">
+          {videos === null && <p className="text-sm font-bold text-black/35">Loading your deliveries…</p>}
 
           {videos !== null && filteredVideos.length === 0 && (
             <EmptyState
@@ -123,23 +129,30 @@ export function PortalClient({ slug, companyName }: { slug: string; companyName:
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {filteredVideos.map((v) => (
                 <div key={v.id} className="vh-card vh-card-hover flex flex-col overflow-hidden">
-                  <div className="border-b border-ink-100 bg-brand-50/60 px-5 py-3">
-                    <p className="text-sm font-semibold text-ink-900">{v.branch_name}</p>
-                    <p className="text-xs text-ink-500">{formatDate(v.video_date)}</p>
+                  <div className="bg-vh-blue px-5 py-4">
+                    <p className="text-base font-black uppercase leading-tight tracking-tight text-white">
+                      {v.branch_name}
+                    </p>
+                    <p className="text-xs font-bold text-white/50">{formatDate(v.video_date)}</p>
                   </div>
 
                   <div className="flex flex-1 flex-col p-5">
-                    <p className="text-sm text-ink-500">
-                      Duration <span className="font-semibold tabular-nums text-ink-800">{v.duration_seconds}s</span>
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black uppercase tracking-wide text-black/40">
+                        Duration
+                      </span>
+                      <span className="rounded-full bg-vh-lime px-3 py-1 text-sm font-black tabular-nums text-black">
+                        {v.duration_seconds}s
+                      </span>
+                    </div>
 
                     <a
                       href={v.drive_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="vh-btn-primary mt-5 w-full"
+                      className="vh-btn-primary mt-6 w-full"
                     >
-                      Open video
+                      Open video →
                     </a>
                   </div>
                 </div>

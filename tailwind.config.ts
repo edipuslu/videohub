@@ -31,6 +31,15 @@ const config: Config = {
           900: "#20242a",
           950: "#14171b",
         },
+        // VideoHub brand palette (matches the login hero).
+        vh: {
+          blue: "#0038ff",
+          bright: "#1436ff",
+          deep: "#001a99",
+          lime: "#ccff00",
+          mist: "#f5f6fa",
+          line: "#e6e8f0",
+        },
         gold: {
           50: "#fbf7ed",
           100: "#f5eacb",
