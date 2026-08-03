@@ -35,8 +35,13 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
       color: company.color,
       color_name: company.color_name,
       created_at: company.created_at,
-      // Clients must never receive this — only the Uslu Digital admin.
-      ...(session.role === "admin" ? { password: decryptSecret(company.password_vault) } : {}),
+      // Clients must never receive either of these — only the Uslu Digital admin.
+      ...(session.role === "admin"
+        ? {
+            password: decryptSecret(company.password_vault),
+            pricePerBlock: company.price_per_block == null ? null : Number(company.price_per_block),
+          }
+        : {}),
     },
   });
 }
@@ -73,6 +78,16 @@ export async function PATCH(req: Request, { params }: { params: { slug: string }
       if (conflict) return NextResponse.json({ error: conflict }, { status: 400 });
     }
     update.login = login;
+  }
+
+  // The rate per 15s block is fixed per company and reused every month, so it
+  // lives here rather than being re-entered on each monthly bill.
+  if (body?.pricePerBlock !== undefined && body?.pricePerBlock !== null && body?.pricePerBlock !== "") {
+    const price = Number(body.pricePerBlock);
+    if (!Number.isFinite(price) || price < 0) {
+      return NextResponse.json({ error: "Enter a valid price per 15s block." }, { status: 400 });
+    }
+    update.price_per_block = price;
   }
 
   if (typeof body?.password === "string" && body.password.length > 0) {

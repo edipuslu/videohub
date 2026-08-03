@@ -52,9 +52,13 @@ export async function GET(req: Request) {
 
     const saved = (payments ?? []).find((p) => p.company_slug === company.slug) ?? null;
 
-    // A saved row keeps the rate it was billed at; otherwise use the company's
-    // current rate so the page shows a live estimate.
-    const pricePerBlock = Number(saved?.price_per_block ?? company.price_per_block ?? 0);
+    // A month that has been paid keeps the rate it was billed at — that's a
+    // historical record. Anything not yet paid follows the company's current
+    // fixed rate, so changing the price updates every outstanding month.
+    const pricePerBlock =
+      saved?.status === "paid"
+        ? Number(saved.price_per_block ?? 0)
+        : Number(company.price_per_block ?? 0);
     const charge = calculateMonthCharge(totalSeconds, pricePerBlock);
 
     return {
@@ -103,10 +107,14 @@ export async function PATCH(req: Request) {
     .eq("month", month)
     .maybeSingle();
 
+  // The rate is the company's fixed price, unless this month is already paid
+  // (then it keeps the rate it was billed at).
   const rawPrice = body?.pricePerBlock;
   const pricePerBlock =
     rawPrice === undefined || rawPrice === null || rawPrice === ""
-      ? Number(existing?.price_per_block ?? company.price_per_block ?? 0)
+      ? existing?.status === "paid"
+        ? Number(existing.price_per_block ?? 0)
+        : Number(company.price_per_block ?? 0)
       : Number(rawPrice);
 
   if (!Number.isFinite(pricePerBlock) || pricePerBlock < 0) {

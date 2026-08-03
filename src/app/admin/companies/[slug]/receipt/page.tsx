@@ -204,8 +204,8 @@ export default function ReceiptPage() {
             </div>
           </div>
 
-          {/* Amounts appear once a price has been saved for this month. */}
-          {payment?.saved && payment.pricePerBlock > 0 && (
+          {/* The company's fixed rate is enough — no per-month setup needed. */}
+          {payment && payment.pricePerBlock > 0 && (
             <div className="mt-7 border-t-2 border-vh-line pt-7">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black uppercase tracking-tight text-black">Amount due</h3>

@@ -49,6 +49,8 @@ interface CompanyDetail {
   branches: string[];
   /** Readable copy of the shared company password (admins only). */
   password?: string | null;
+  /** Fixed rate per 15s block, reused for every month (admins only). */
+  pricePerBlock?: number | null;
 }
 
 interface VideoRow {
@@ -514,7 +516,9 @@ export default function CompanyAdminDashboardPage() {
           slug={company.slug}
           companyName={company.name}
           month={month}
+          fixedPrice={company.pricePerBlock ?? null}
           onClose={() => setShowPaymentForm(false)}
+          onPriceChanged={load}
         />
       )}
 
@@ -1113,27 +1117,39 @@ interface PaymentState {
   paidAt: string | null;
 }
 
+
 /**
- * The month's bill for one company: rate per 15s block, the computed amounts,
- * and whether it has been paid. Saving here is what makes the amounts appear
- * on the printable receipt.
+ * The month's bill for one company.
+ *
+ * The rate per 15-second block is a fixed property of the company, so it is set
+ * once and reused for every month automatically — there is nothing to re-enter
+ * each month. Changing it is deliberately guarded behind typing EDIT, because
+ * it silently changes what every future month is worth.
  */
 function PaymentModal({
   slug,
   companyName,
   month,
+  fixedPrice,
   onClose,
+  onPriceChanged,
 }: {
   slug: string;
   companyName: string;
   month: string;
+  fixedPrice: number | null;
   onClose: () => void;
+  onPriceChanged: () => void;
 }) {
   const [row, setRow] = useState<PaymentState | null>(null);
-  const [price, setPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  // Price editing, gated behind a typed confirmation.
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceDraft, setPriceDraft] = useState("");
+  const [confirmWord, setConfirmWord] = useState("");
 
   async function load() {
     const res = await apiFetch(`/api/payments?month=${month}&company=${slug}`);
@@ -1143,9 +1159,7 @@ function PaymentModal({
       return;
     }
     const data = await res.json();
-    const r = data.rows?.[0] ?? null;
-    setRow(r);
-    if (r) setPrice(r.pricePerBlock ? String(r.pricePerBlock) : "");
+    setRow(data.rows?.[0] ?? null);
   }
 
   useEffect(() => {
@@ -1153,13 +1167,13 @@ function PaymentModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, month]);
 
-  async function save(patch: { pricePerBlock?: string; status?: "paid" | "unpaid" }) {
+  async function setStatus(status: "paid" | "unpaid") {
     setSaving(true);
     setError(null);
     const res = await apiFetch("/api/payments", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companySlug: slug, month, ...patch }),
+      body: JSON.stringify({ companySlug: slug, month, status }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -1167,29 +1181,127 @@ function PaymentModal({
       setError(d?.error ?? "Could not save.");
       return;
     }
-    setSaved(true);
+    setNote(status === "paid" ? "Marked as paid." : "Marked as unpaid.");
     load();
   }
 
-  // Live preview while typing, so the totals update before saving.
-  const preview = row ? calculateMonthCharge(row.blocks * 15 + row.leftoverSeconds, Number(price) || 0) : null;
+  async function savePrice() {
+    setSaving(true);
+    setError(null);
+    const res = await apiFetch(`/api/companies/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pricePerBlock: priceDraft }),
+    });
+    setSaving(false);
+    if (!res.ok) {
+      const d = await res.json().catch(() => null);
+      setError(d?.error ?? "Could not save the price.");
+      return;
+    }
+    setEditingPrice(false);
+    setConfirmWord("");
+    setNote("Price updated — it now applies to every month from here on.");
+    onPriceChanged();
+    load();
+  }
+
+  const price = fixedPrice ?? 0;
+  const charge = row ? calculateMonthCharge(row.blocks * 15 + row.leftoverSeconds, price) : null;
+  const priceLocked = confirmWord !== "EDIT";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
         <h3 className="text-xl font-black uppercase tracking-tight text-black">
           Payment · {monthLabel(month)}
         </h3>
-        <p className="mt-2 text-sm font-bold text-black/45">
-          {companyName} — set the rate per 15-second block. Saving puts these amounts on the
-          printable receipt.
-        </p>
+        <p className="mt-2 text-sm font-bold text-black/45">{companyName}</p>
+
+        {/* Fixed rate — set once, applies to every month. */}
+        <div className="mt-6 rounded-2xl border-2 border-vh-line px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wide text-black/40">
+                Fixed price per 15s block
+              </p>
+              <p className="mt-0.5 text-2xl font-black tabular-nums text-black">
+                {fixedPrice == null ? "Not set" : formatAmount(price)}
+              </p>
+            </div>
+            {!editingPrice && (
+              <button
+                className="vh-btn-secondary"
+                onClick={() => {
+                  setPriceDraft(fixedPrice == null ? "" : String(fixedPrice));
+                  setConfirmWord("");
+                  setEditingPrice(true);
+                }}
+              >
+                {fixedPrice == null ? "Set price" : "Change price"}
+              </button>
+            )}
+          </div>
+
+          {editingPrice && (
+            <div className="mt-4 space-y-3 border-t-2 border-vh-line pt-4">
+              <div>
+                <label className="vh-label" htmlFor="fixed-price">
+                  New price per 15-second block
+                </label>
+                <input
+                  id="fixed-price"
+                  className="vh-input"
+                  inputMode="decimal"
+                  value={priceDraft}
+                  placeholder="e.g. 250"
+                  onChange={(e) => setPriceDraft(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="vh-label">
+                  Type <span className="text-vh-bright">EDIT</span> to confirm
+                </label>
+                <input
+                  className="vh-input"
+                  value={confirmWord}
+                  onChange={(e) => setConfirmWord(e.target.value)}
+                  placeholder="EDIT"
+                  autoComplete="off"
+                />
+              </div>
+              <p className="text-[11px] font-bold text-black/35">
+                Months already marked paid keep the price they were billed at.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  className="vh-btn-secondary"
+                  onClick={() => {
+                    setEditingPrice(false);
+                    setConfirmWord("");
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="vh-btn-primary"
+                  disabled={saving || priceLocked || !priceDraft}
+                  onClick={savePrice}
+                >
+                  {saving ? "Saving…" : "Save price"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {!row && !error && <p className="mt-6 text-sm font-bold text-black/35">Loading…</p>}
 
         {row && (
           <>
-            <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="mt-5 grid grid-cols-3 gap-3">
               <div className="rounded-2xl bg-vh-mist px-4 py-3">
                 <p className="text-[10px] font-black uppercase tracking-wide text-black/40">Videos</p>
                 <p className="mt-0.5 text-xl font-black tabular-nums text-black">{row.videoCount}</p>
@@ -1210,46 +1322,33 @@ function PaymentModal({
               </div>
             </div>
 
-            <div className="mt-5">
-              <label className="vh-label" htmlFor="price-per-block">
-                Price per 15-second block
-              </label>
-              <input
-                id="price-per-block"
-                className="vh-input"
-                inputMode="decimal"
-                value={price}
-                placeholder="e.g. 250"
-                onChange={(e) => {
-                  setPrice(e.target.value);
-                  setSaved(false);
-                }}
-              />
-            </div>
-
-            {preview && (
+            {charge && price > 0 ? (
               <div className="mt-5 space-y-2 rounded-2xl border-2 border-vh-line px-5 py-4">
                 <div className="flex items-center justify-between text-sm font-bold text-black/50">
                   <span>
-                    {preview.blocks} block{preview.blocks === 1 ? "" : "s"} × {preview.pricePerBlock}
+                    {charge.blocks} block{charge.blocks === 1 ? "" : "s"} × {formatAmount(price)}
                   </span>
-                  <span className="tabular-nums text-black">{formatAmount(preview.blocksAmount)}</span>
+                  <span className="tabular-nums text-black">{formatAmount(charge.blocksAmount)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm font-bold text-black/50">
                   <span>
-                    {preview.leftoverSeconds}s ÷ 15 × {preview.pricePerBlock}
+                    {charge.leftoverSeconds}s ÷ 15 × {formatAmount(price)}
                   </span>
                   <span className="tabular-nums text-black">
-                    {formatAmount(preview.leftoverAmount)}
+                    {formatAmount(charge.leftoverAmount)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between border-t-2 border-vh-line pt-2">
                   <span className="text-sm font-black uppercase tracking-wide text-black">Total</span>
                   <span className="text-2xl font-black tabular-nums text-black">
-                    {formatAmount(preview.total)}
+                    {formatAmount(charge.total)}
                   </span>
                 </div>
               </div>
+            ) : (
+              <p className="mt-5 rounded-2xl bg-vh-mist px-5 py-4 text-sm font-bold text-black/40">
+                Set the fixed price above and every month will total automatically.
+              </p>
             )}
 
             <div className="mt-5 flex items-center justify-between rounded-2xl bg-vh-mist px-5 py-3">
@@ -1264,13 +1363,9 @@ function PaymentModal({
                 )}
               </div>
               <button
-                disabled={saving}
-                onClick={() => save({ status: row.status === "paid" ? "unpaid" : "paid" })}
-                className={
-                  row.status === "paid"
-                    ? "vh-btn-secondary"
-                    : "vh-btn-accent"
-                }
+                disabled={saving || price <= 0}
+                onClick={() => setStatus(row.status === "paid" ? "unpaid" : "paid")}
+                className={row.status === "paid" ? "vh-btn-secondary" : "vh-btn-accent"}
               >
                 {row.status === "paid" ? "Mark unpaid" : "Mark paid"}
               </button>
@@ -1284,23 +1379,15 @@ function PaymentModal({
           </div>
         )}
 
-        {saved && !error && (
+        {note && !error && (
           <div className="mt-5 rounded-xl border-2 border-vh-lime bg-vh-lime/20 px-3.5 py-2.5 text-sm font-black text-black">
-            Saved — these amounts now show on the printable receipt.
+            {note}
           </div>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={saving}>
-            Close
-          </button>
-          <button
-            type="button"
-            className="vh-btn-primary"
-            disabled={saving || !row}
-            onClick={() => save({ pricePerBlock: price })}
-          >
-            {saving ? "Saving…" : "Save for this month"}
+        <div className="mt-6 flex justify-end">
+          <button type="button" className="vh-btn-primary" onClick={onClose} disabled={saving}>
+            Done
           </button>
         </div>
       </div>
