@@ -27,8 +27,11 @@ export function SecretCell({ value }: { value: string | null }) {
 
   if (!value) {
     return (
-      <span className="text-xs font-bold text-black/25" title="Set a new password to store it here">
-        Not stored
+      <span
+        className="text-xs font-bold text-black/30"
+        title="Passwords set before this feature existed are stored one-way and cannot be read back. Use Edit to set a new one and it will show here from then on."
+      >
+        Hidden — set a new password to see it
       </span>
     );
   }
