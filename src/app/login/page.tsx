@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Component as Hero } from "@/components/ui/hero";
+import { HowItWorks } from "@/components/ui/how-it-works";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,6 +37,7 @@ export default function LoginPage() {
   }
 
   return (
+    <>
     <Hero
       formSlot={
         <div className="relative z-30 w-full rounded-3xl border border-white/30 bg-white/15 p-8 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl">
@@ -101,5 +103,7 @@ export default function LoginPage() {
         </div>
       }
     />
+    <HowItWorks />
+    </>
   );
 }
