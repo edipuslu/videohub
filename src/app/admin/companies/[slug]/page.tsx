@@ -355,8 +355,8 @@ export default function CompanyAdminDashboardPage() {
         )}
 
         {filteredVideos.length > 0 && (
-          <div className="mt-5 overflow-hidden rounded-[1.5rem] border-2 border-vh-line bg-white">
-            <table className="w-full text-left text-sm">
+          <div className="mt-5 overflow-x-auto rounded-[1.5rem] border-2 border-vh-line bg-white">
+            <table className="w-full min-w-[44rem] text-left text-sm">
               <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40">
                 <tr>
                   <th className="px-5 py-3.5">Date</th>
@@ -409,8 +409,8 @@ export default function CompanyAdminDashboardPage() {
           </button>
         </div>
 
-        <div className="mt-5 overflow-hidden rounded-[1.5rem] border-2 border-vh-line bg-white">
-          <table className="w-full text-left text-sm">
+        <div className="mt-5 overflow-x-auto rounded-[1.5rem] border-2 border-vh-line bg-white">
+          <table className="w-full min-w-[44rem] text-left text-sm">
             <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40">
               <tr>
                 <th className="px-5 py-3.5">Name</th>

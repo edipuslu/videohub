@@ -23,7 +23,7 @@ export function MonthPicker({
   const monthsInYear = useMemo(() => months.filter((m) => m.startsWith(activeYear)), [months, activeYear]);
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="flex w-full min-w-0 flex-col items-start gap-2 sm:w-auto sm:items-end">
       {years.length > 1 && (
         <div className="flex gap-1">
           {years.map((y) => (
@@ -39,7 +39,8 @@ export function MonthPicker({
           ))}
         </div>
       )}
-      <div className="flex flex-wrap justify-end gap-1 rounded-full border-2 border-vh-line bg-white p-1.5">
+      {/* Scrolls sideways on phones rather than wrapping a stray month onto its own line. */}
+      <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border-2 border-vh-line bg-white p-1.5 sm:flex-wrap sm:justify-end sm:overflow-visible">
         {monthsInYear.map((m) => (
           <button
             key={m}

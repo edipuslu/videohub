@@ -72,7 +72,9 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#ffffff18_1px,transparent_1px),linear-gradient(to_bottom,#ffffff18_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <main className="relative z-10 flex min-h-[102vh] w-full items-center justify-center px-5 pb-36 pt-10 md:min-h-[112vh] md:pb-52">
-        <section className="relative grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_420px] lg:-translate-x-10 xl:-translate-x-16">
+        {/* min-w-0 on the children stops the oversized headline from forcing
+            the grid wider than a phone screen. */}
+        <section className="relative grid w-full max-w-6xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:-translate-x-10 xl:-translate-x-16">
           {/* Decorative ring behind the layout */}
           <div className="pointer-events-none absolute left-[58%] top-1/2 hidden h-[46rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 md:block" />
 
@@ -87,7 +89,7 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             </span>
           </motion.div>
 
-          <div className="relative text-center lg:text-left">
+          <div className="relative min-w-0 text-center lg:text-left">
             <div className="mx-auto mb-8 flex w-fit items-center gap-1 lg:mx-0">
               <span className="relative rounded-2xl rounded-bl-sm bg-white px-4 py-2 text-sm font-black text-black">
                 VIDEO
@@ -98,8 +100,12 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             </div>
 
             <h1
-              className="text-[clamp(4rem,12vw,10rem)] font-black uppercase leading-[0.82] tracking-tight text-white"
-              style={{ fontFamily: '"Arial Black", Impact, sans-serif', textShadow: "10px 10px 0 #001a99" }}
+              className="text-[clamp(2.75rem,11vw,10rem)] font-black uppercase leading-[0.85] tracking-tight text-white"
+              style={{
+                fontFamily: '"Arial Black", Impact, sans-serif',
+                // Shadow scales with the type so it doesn't swamp small screens.
+                textShadow: "0.14em 0.14em 0 #001a99",
+              }}
             >
               <span className="text-[#ccff00]">Video</span>
               <br />
@@ -122,7 +128,7 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[420px]">
+          <div className="relative mx-auto w-full min-w-0 max-w-[420px]">
             {formSlot}
             <motion.div
               animate={{ y: [0, -12, 0], rotate: [12, 7, 12] }}

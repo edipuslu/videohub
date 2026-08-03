@@ -105,14 +105,14 @@ export default function ReceiptPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10 print:max-w-none print:px-10 print:py-6">
-      <div className="no-print mb-6 flex items-center justify-between">
+    <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 print:max-w-none print:px-10 print:py-6">
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
         <Link href={`/admin/companies/${slug}`} className="vh-btn-secondary">
           ← Back to dashboard
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
           <MonthPicker months={availableMonths} value={month} onChange={setMonth} />
-          <button className="vh-btn-primary" onClick={() => window.print()}>
+          <button className="vh-btn-primary shrink-0" onClick={() => window.print()}>
             Print
           </button>
         </div>
@@ -120,7 +120,7 @@ export default function ReceiptPage() {
 
       <div className="overflow-hidden rounded-[1.5rem] border-2 border-vh-line bg-white print:rounded-none print:border-0">
         {/* Blue letterhead — dropped when printing to save ink */}
-        <div className="flex items-start justify-between gap-4 bg-vh-blue px-8 py-7 print:bg-white print:px-0 print:pt-0">
+        <div className="flex items-start justify-between gap-4 bg-vh-blue px-5 py-6 sm:px-8 sm:py-7 print:bg-white print:px-0 print:pt-0">
           <div>
             <div className="flex items-center gap-1">
               <span className="rounded-xl rounded-bl-sm bg-white px-2.5 py-1 text-[11px] font-black text-black print:border print:border-black">
@@ -143,7 +143,7 @@ export default function ReceiptPage() {
           </div>
         </div>
 
-        <div className="px-8 py-7 print:px-0">
+        <div className="px-5 py-6 sm:px-8 sm:py-7 print:px-0">
           <div>
             <p className="text-[11px] font-black uppercase tracking-wide text-black/40">Client company</p>
             <p className="text-xl font-black uppercase tracking-tight text-black">{company.name}</p>
@@ -155,7 +155,7 @@ export default function ReceiptPage() {
               No deliveries logged for {monthLabel(month)}.
             </p>
           ) : (
-            <div className="mt-6 overflow-hidden rounded-2xl border-2 border-vh-line print:overflow-visible print:rounded-none print:border-0">
+            <div className="mt-6 overflow-x-auto rounded-2xl border-2 border-vh-line print:overflow-visible print:rounded-none print:border-0">
               <table className="w-full text-left text-sm">
                 <thead className="bg-vh-mist text-[11px] font-black uppercase tracking-wide text-black/40 print:bg-transparent">
                   <tr>

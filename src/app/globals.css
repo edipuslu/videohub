@@ -54,16 +54,18 @@ body {
     disabled:cursor-not-allowed disabled:opacity-50;
   }
 
-  /* Sits on the dark blue topbar. */
+  /* Sits on the dark blue topbar. Tighter on phones, where several of these
+     wrap onto their own row. */
   .vh-btn-ghost-dark {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2
-    text-sm font-black text-white backdrop-blur-sm transition-colors hover:bg-white/20
-    disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-1.5
+    text-xs font-black text-white backdrop-blur-sm transition-colors hover:bg-white/20
+    disabled:cursor-not-allowed disabled:opacity-50 sm:px-4 sm:py-2 sm:text-sm;
   }
 
   .vh-btn-onblue {
-    @apply inline-flex items-center justify-center gap-2 rounded-full bg-vh-lime px-4 py-2 text-sm font-black
-    text-black transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-vh-lime px-3 py-1.5 text-xs font-black
+    text-black transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-50
+    sm:px-4 sm:py-2 sm:text-sm;
   }
 
   .vh-btn-danger {

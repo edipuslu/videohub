@@ -92,7 +92,7 @@ export function HowItWorks() {
           }
           description="Seconds, videos, branches, and 15-second billing blocks stay simple."
         >
-          <div className="relative inline-flex items-center gap-4 rounded-full bg-[#1436ff] p-2 pr-7">
+          <div className="relative inline-flex items-center gap-4 rounded-full bg-[#1436ff] p-2 pr-9">
             <span className="rounded-full bg-white/20 px-5 py-2.5 text-lg font-black text-white">15s</span>
             <span className="text-lg font-black tracking-tight text-white">BLOCKS</span>
             {/* Badge sits on the pill's bottom-right corner; the ring separates
