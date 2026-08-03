@@ -80,7 +80,7 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="pointer-events-none absolute left-[56%] top-[-0.5rem] z-20 hidden md:block"
+            className="pointer-events-none absolute left-[56%] top-[-1.5rem] z-20 hidden md:block"
           >
             <span className="whitespace-nowrap rounded-full bg-[#ccff00] px-5 py-2.5 text-sm font-black text-black shadow-xl">
               USLU DIGITAL
@@ -145,7 +145,7 @@ export function Component({ formSlot }: { formSlot?: React.ReactNode }) {
             detail="Videos ready to open"
             badge="VL"
             rotate={-5}
-            className="left-[60%] top-[1.5rem] w-28"
+            className="left-[47%] top-[1.5rem] w-28"
           />
         </section>
       </main>
