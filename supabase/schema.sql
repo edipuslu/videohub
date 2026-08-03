@@ -15,13 +15,31 @@ create table if not exists public.visionhub_companies (
   created_at timestamptz not null default now()
 );
 
+-- People at a client company who each have their own VideoHub login.
 create table if not exists public.visionhub_company_users (
   id bigint generated always as identity primary key,
   company_slug text not null references public.visionhub_companies(slug) on delete cascade,
-  email text not null,
-  role text not null check (role in ('admin', 'client')),
+  email text,
+  name text,
+  login text,
+  password_hash text,
+  role text not null default 'worker' check (role in ('owner', 'worker')),
   created_at timestamptz not null default now(),
   unique (company_slug, email)
+);
+
+create unique index if not exists idx_visionhub_company_users_login
+on public.visionhub_company_users(login);
+
+-- Uslu Digital admin accounts. ADMIN_VIDEOHUB_ID / ADMIN_PASSWORD_HASH in the
+-- environment only work while this table is empty (bootstrap + lockout recovery).
+create table if not exists public.visionhub_admins (
+  id bigint generated always as identity primary key,
+  login text not null unique,
+  password_hash text not null,
+  name text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.visionhub_video_deliveries (
@@ -47,6 +65,13 @@ on public.visionhub_video_deliveries(company_slug, video_date desc);
 alter table public.visionhub_companies enable row level security;
 alter table public.visionhub_company_users enable row level security;
 alter table public.visionhub_video_deliveries enable row level security;
+alter table public.visionhub_admins enable row level security;
+
+create policy "VideoHub service role can manage admins"
+on public.visionhub_admins
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
 
 create policy "VisionHub service role can manage companies"
 on public.visionhub_companies

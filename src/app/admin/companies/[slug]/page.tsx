@@ -81,8 +81,10 @@ export default function CompanyAdminDashboardPage() {
   const [deletingBranch, setDeletingBranch] = useState(false);
   const [users, setUsers] = useState<CompanyUserRow[] | null>(null);
   const [showUserForm, setShowUserForm] = useState(false);
+  const [editUserTarget, setEditUserTarget] = useState<CompanyUserRow | null>(null);
   const [userDeleteTarget, setUserDeleteTarget] = useState<CompanyUserRow | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
+  const [showCompanyLoginForm, setShowCompanyLoginForm] = useState(false);
 
   async function load() {
     const [companyRes, videosRes, usersRes] = await Promise.all([
@@ -408,7 +410,9 @@ export default function CompanyAdminDashboardPage() {
                   <span className="vh-pill bg-vh-blue text-white">Primary</span>
                 </td>
                 <td className="px-5 py-4 text-right">
-                  <span className="text-xs font-bold text-black/25">Built in</span>
+                  <button className="vh-btn-secondary" onClick={() => setShowCompanyLoginForm(true)}>
+                    Edit
+                  </button>
                 </td>
               </tr>
 
@@ -425,10 +429,15 @@ export default function CompanyAdminDashboardPage() {
                       {u.role === "owner" ? "Owner" : "Worker"}
                     </span>
                   </td>
-                  <td className="px-5 py-4 text-right">
-                    <button className="vh-btn-danger" onClick={() => setUserDeleteTarget(u)}>
-                      Remove
-                    </button>
+                  <td className="px-5 py-4">
+                    <div className="flex justify-end gap-2">
+                      <button className="vh-btn-secondary" onClick={() => setEditUserTarget(u)}>
+                        Edit
+                      </button>
+                      <button className="vh-btn-danger" onClick={() => setUserDeleteTarget(u)}>
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -451,6 +460,29 @@ export default function CompanyAdminDashboardPage() {
           onClose={() => setShowUserForm(false)}
           onCreated={() => {
             setShowUserForm(false);
+            load();
+          }}
+        />
+      )}
+
+      {editUserTarget && (
+        <EditUserModal
+          user={editUserTarget}
+          onClose={() => setEditUserTarget(null)}
+          onSaved={() => {
+            setEditUserTarget(null);
+            load();
+          }}
+        />
+      )}
+
+      {showCompanyLoginForm && (
+        <EditCompanyLoginModal
+          slug={company.slug}
+          currentLogin={company.login}
+          onClose={() => setShowCompanyLoginForm(false)}
+          onSaved={() => {
+            setShowCompanyLoginForm(false);
             load();
           }}
         />
@@ -808,6 +840,207 @@ function AddUserModal({
             </button>
             <button type="submit" className="vh-btn-primary" disabled={loading}>
               {loading ? "Adding…" : "Add person"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({
+  user,
+  onClose,
+  onSaved,
+}: {
+  user: CompanyUserRow;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [name, setName] = useState(user.name ?? "");
+  const [login, setLogin] = useState(user.login);
+  const [role, setRole] = useState<"owner" | "worker">(user.role);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const res = await fetch(`/api/users/${user.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, login, role, password: password || undefined }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error ?? "Could not save changes.");
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Edit person</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
+          Leave the password blank to keep their current one.
+        </p>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="vh-label">Full name</label>
+            <input
+              className="vh-input"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">VideoHub ID</label>
+            <input
+              className="vh-input"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">New password (optional)</label>
+            <input
+              className="vh-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave blank to keep current"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="vh-label">Role</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setRole("owner")}
+                className={`vh-tab flex-1 ${
+                  role === "owner" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
+              >
+                Owner
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole("worker")}
+                className={`vh-tab flex-1 ${
+                  role === "worker" ? "vh-tab-active" : "border-2 border-vh-line bg-white"
+                }`}
+              >
+                Worker
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="vh-btn-primary" disabled={loading}>
+              {loading ? "Saving…" : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditCompanyLoginModal({
+  slug,
+  currentLogin,
+  onClose,
+  onSaved,
+}: {
+  slug: string;
+  currentLogin: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [login, setLogin] = useState(currentLogin);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    const res = await fetch(`/api/companies/${slug}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ login, password: password || undefined }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error ?? "Could not save changes.");
+      return;
+    }
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-vh-deep/60 px-4 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-[1.5rem] border-2 border-vh-line bg-white p-7 shadow-2xl">
+        <h3 className="text-xl font-black uppercase tracking-tight text-black">Edit company login</h3>
+        <p className="mt-2 text-sm font-bold text-black/45">
+          This is the company&rsquo;s shared VideoHub ID. Leave the password blank to keep the
+          current one.
+        </p>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="vh-label">Client login ID</label>
+            <input
+              className="vh-input"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              required
+            />
+          </div>
+          <div>
+            <label className="vh-label">New password (optional)</label>
+            <input
+              className="vh-input"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave blank to keep current"
+              autoComplete="new-password"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-xl border-2 border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" className="vh-btn-secondary" onClick={onClose} disabled={loading}>
+              Cancel
+            </button>
+            <button type="submit" className="vh-btn-primary" disabled={loading}>
+              {loading ? "Saving…" : "Save changes"}
             </button>
           </div>
         </form>

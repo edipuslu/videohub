@@ -15,26 +15,56 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1. Single master admin account, defined by environment variables
-  //    (no admins table — see ADMIN_VIDEOHUB_ID / ADMIN_PASSWORD_HASH).
-  const adminId = process.env.ADMIN_VIDEOHUB_ID;
-  const adminHash = process.env.ADMIN_PASSWORD_HASH;
+  const db = supabaseAdmin();
 
-  if (adminId && adminHash && videohubId === adminId) {
-    const ok = await verifyPassword(password, adminHash);
+  // 1. Uslu Digital admin accounts, stored in the database so the ID and
+  //    password can be changed from inside the app.
+  const { data: admin } = await db
+    .from("visionhub_admins")
+    .select("id, login, name, password_hash")
+    .eq("login", videohubId)
+    .maybeSingle();
+
+  if (admin) {
+    const ok = await verifyPassword(password, admin.password_hash);
     if (!ok) {
       return NextResponse.json({ error: "Incorrect VideoHub ID or password." }, { status: 401 });
     }
 
-    const token = await createSessionToken({ role: "admin", loginId: adminId });
+    const token = await createSessionToken({
+      role: "admin",
+      loginId: admin.login,
+      userName: admin.name ?? undefined,
+    });
     const res = NextResponse.json({ role: "admin", redirect: "/admin" });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
     return res;
   }
 
-  const db = supabaseAdmin();
+  // 2. Environment bootstrap. This only works while no admin row exists, so
+  //    changing the password in the app genuinely retires the old one.
+  const adminId = process.env.ADMIN_VIDEOHUB_ID;
+  const adminHash = process.env.ADMIN_PASSWORD_HASH;
 
-  // 2. Named company user (owner / worker) — each has their own VideoHub ID.
+  if (adminId && adminHash && videohubId === adminId) {
+    const { count } = await db
+      .from("visionhub_admins")
+      .select("id", { count: "exact", head: true });
+
+    if (!count) {
+      const ok = await verifyPassword(password, adminHash);
+      if (!ok) {
+        return NextResponse.json({ error: "Incorrect VideoHub ID or password." }, { status: 401 });
+      }
+
+      const token = await createSessionToken({ role: "admin", loginId: adminId });
+      const res = NextResponse.json({ role: "admin", redirect: "/admin" });
+      res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions);
+      return res;
+    }
+  }
+
+  // 3. Named company user (owner / worker) — each has their own VideoHub ID.
   const { data: user } = await db
     .from("visionhub_company_users")
     .select("id, company_slug, name, login, role, password_hash")
@@ -71,7 +101,7 @@ export async function POST(req: Request) {
     return res;
   }
 
-  // 3. Shared company login (the company's own ID/password).
+  // 4. Shared company login (the company's own ID/password).
   const { data: company } = await db
     .from("visionhub_companies")
     .select("slug, name, login, password, password_hash")

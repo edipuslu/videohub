@@ -51,9 +51,14 @@ export default function CompaniesDashboardPage() {
         title="Companies Dashboard"
         subtitle="Uslu Digital admin"
         right={
-          <button className="vh-btn-onblue" onClick={() => setShowForm(true)}>
-            + New company
-          </button>
+          <>
+            <Link href="/admin/account" className="vh-btn-ghost-dark">
+              My account
+            </Link>
+            <button className="vh-btn-onblue" onClick={() => setShowForm(true)}>
+              + New company
+            </button>
+          </>
         }
       />
 
