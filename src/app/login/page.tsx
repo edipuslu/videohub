@@ -2,25 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import ResponsiveHeroBanner from "@/components/ui/responsive-hero-banner";
-import { InfiniteSlider } from "@/components/ui/infinite-slider";
-
-const CLIENT_VERTICALS = [
-  "Restaurant",
-  "Hotel",
-  "Pharmacy",
-  "Retail",
-  "Furniture",
-  "Real Estate",
-  "Fitness",
-  "Automotive",
-];
-
-const BULLETS = [
-  "Company and branch management for every Uslu Digital client",
-  "Delivery tracking with automatic post-type classification",
-  "A private, month-by-month delivery view for each client",
-];
+import { Component as Hero } from "@/components/ui/hero";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,90 +36,70 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#09090b]">
-      <ResponsiveHeroBanner
-        bullets={BULLETS}
-        formSlot={
-          <div className="mx-auto w-full max-w-sm rounded-2xl bg-white/[0.06] p-8 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl">
-            <h2 className="font-display text-2xl font-medium text-[#fafafa]">Sign in to VideoHub</h2>
-            <p className="mt-1.5 text-sm text-[#a1a1aa]">
-              Enter your VideoHub ID and password. Admins land on the companies dashboard;
-              clients see only their own delivery portal.
-            </p>
+    <Hero
+      formSlot={
+        <div className="relative z-30 w-full rounded-3xl border border-white/30 bg-white/15 p-8 shadow-2xl ring-1 ring-white/20 backdrop-blur-2xl">
+          <h2 className="text-2xl font-black text-white">Sign in to VideoHub</h2>
+          <p className="mt-1.5 text-sm font-medium text-white/75">
+            Enter your VideoHub ID and password. Admins land on the companies dashboard;
+            clients see only their own delivery portal.
+          </p>
 
-            <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
-              <div>
-                <label
-                  className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[#a1a1aa]"
-                  htmlFor="videohubId"
-                >
-                  VideoHub ID
-                </label>
-                <input
-                  id="videohubId"
-                  className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-[#fafafa]
-                  placeholder:text-[#71717a] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
-                  autoComplete="username"
-                  value={videohubId}
-                  onChange={(e) => setVideohubId(e.target.value)}
-                  placeholder="e.g. uslu-admin"
-                  required
-                />
+          <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/75" htmlFor="videohubId">
+                VideoHub ID
+              </label>
+              <input
+                id="videohubId"
+                className="w-full rounded-xl border border-white/30 bg-white/10 px-3.5 py-2.5 text-sm text-white
+                placeholder:text-white/50 focus:border-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+                autoComplete="username"
+                value={videohubId}
+                onChange={(e) => setVideohubId(e.target.value)}
+                placeholder="e.g. uslu-admin"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-white/75" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                className="w-full rounded-xl border border-white/30 bg-white/10 px-3.5 py-2.5 text-sm text-white
+                placeholder:text-white/50 focus:border-white/60 focus:outline-none focus:ring-2 focus:ring-white/30"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="rounded-xl border border-red-300/40 bg-red-500/20 px-3.5 py-2.5 text-sm text-white">
+                {error}
               </div>
+            )}
 
-              <div>
-                <label
-                  className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[#a1a1aa]"
-                  htmlFor="password"
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  className="w-full rounded-lg border border-white/15 bg-white/5 px-3.5 py-2.5 text-sm text-[#fafafa]
-                  placeholder:text-[#71717a] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-
-              {error && (
-                <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3.5 py-2.5 text-sm text-red-300">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="w-full rounded-lg bg-[#fafafa] px-4 py-2.5 text-sm font-semibold text-[#09090b]
-                transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={loading}
-              >
-                {loading ? "Signing in…" : "Sign in"}
-              </button>
-            </form>
-
-            <p className="mt-6 text-center text-xs text-[#71717a]">
-              Private Uslu Digital system &middot; videohub.usludigital.com
-            </p>
-          </div>
-        }
-      >
-        <InfiniteSlider gap={12} duration={28} className="w-full">
-          {CLIENT_VERTICALS.map((v) => (
-            <span
-              key={v}
-              className="whitespace-nowrap rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-[#e4e4e7] backdrop-blur-sm"
+            <button
+              type="submit"
+              className="w-full rounded-full bg-[#ccff00] px-4 py-3 text-sm font-black text-black
+              transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loading}
             >
-              {v}
-            </span>
-          ))}
-        </InfiniteSlider>
-      </ResponsiveHeroBanner>
-    </div>
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-xs font-medium text-white/60">
+            Private Uslu Digital system &middot; videohub.usludigital.com
+          </p>
+        </div>
+      }
+    />
   );
 }
