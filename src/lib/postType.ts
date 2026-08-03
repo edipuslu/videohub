@@ -33,8 +33,8 @@ export function formatDate(dateIso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
-/** VideoHub tracking begins July 2026. */
-export const TRACKING_START = "2026-07";
+/** VideoHub tracking begins June 2026. */
+export const TRACKING_START = "2026-06";
 
 /** Builds an ascending list of month keys from tracking start through the given month (inclusive). */
 export function monthRangeFrom(startKey: string, throughKey: string): string[] {

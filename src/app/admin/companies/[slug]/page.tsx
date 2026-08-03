@@ -699,7 +699,7 @@ function AddVideoModal({
               type="date"
               className="vh-input"
               value={videoDate}
-              min="2026-07-01"
+              min="2026-06-01"
               onChange={(e) => setVideoDate(e.target.value)}
               required
             />
@@ -1551,7 +1551,7 @@ function EditDeliveryModal({
                 type="date"
                 className="vh-input"
                 value={videoDate}
-                min="2026-07-01"
+                min="2026-06-01"
                 onChange={(e) => setVideoDate(e.target.value)}
                 required
               />
